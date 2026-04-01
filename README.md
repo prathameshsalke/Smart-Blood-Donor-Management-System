@@ -1,1 +1,0 @@
-# Smart-Blood-Donor-Management-System
