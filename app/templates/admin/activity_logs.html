@@ -1,0 +1,395 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block title %}Activity Logs - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">
+        <i class="fas fa-history me-2"></i>Activity Logs
+    </h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Activity Logs</li>
+    </ol>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-header bg-white">
+            <i class="fas fa-filter me-1"></i>
+            Filter Logs
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Action Type</label>
+                    <select class="form-select" id="actionFilter">
+                        <option value="all">All Actions</option>
+                        <option value="CREATE">Create</option>
+                        <option value="UPDATE">Update</option>
+                        <option value="DELETE">Delete</option>
+                        <option value="VIEW">View</option>
+                        <option value="EXPORT">Export</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Entity Type</label>
+                    <select class="form-select" id="entityFilter">
+                        <option value="all">All Entities</option>
+                        <option value="DONOR">Donor</option>
+                        <option value="REQUEST">Request</option>
+                        <option value="HOSPITAL">Hospital</option>
+                        <option value="USER">User</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Date Range</label>
+                    <input type="date" class="form-control" id="dateFilter">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-danger w-100" onclick="applyFilters()">
+                        <i class="fas fa-search me-2"></i>Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="card mb-4">
+        <div class="card-header bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-table me-1"></i>
+                    Activity Logs
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="exportLogs()">
+                        <i class="fas fa-download me-1"></i>Export
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="refreshLogs()">
+                        <i class="fas fa-sync-alt me-1"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="logsTable">
+                    <thead class="table-danger">
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Admin</th>
+                            <th>Action</th>
+                            <th>Entity</th>
+                            <th>Entity ID</th>
+                            <th>Description</th>
+                            <th>IP Address</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                <span class="badge bg-info">{{ log.admin_email }}</span>
+                            </td>
+                            <td>
+                                {% if log.action == 'CREATE' %}
+                                    <span class="badge bg-success">CREATE</span>
+                                {% elif log.action == 'UPDATE' %}
+                                    <span class="badge bg-warning">UPDATE</span>
+                                {% elif log.action == 'DELETE' %}
+                                    <span class="badge bg-danger">DELETE</span>
+                                {% elif log.action == 'VIEW' %}
+                                    <span class="badge bg-info">VIEW</span>
+                                {% elif log.action == 'EXPORT' %}
+                                    <span class="badge bg-secondary">EXPORT</span>
+                                {% else %}
+                                    <span class="badge bg-dark">{{ log.action }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ log.entity_type }}</td>
+                            <td><code>{{ log.entity_id or 'N/A' }}</code></td>
+                            <td>{{ log.description }}</td>
+                            <td><code>{{ log.ip_address }}</code></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-info" onclick="viewLogDetails({{ log.id }})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No activity logs found</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1">Previous</a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Activity Summary -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Actions</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ logs|length }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Today's Actions</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ logs|selectattr('created_at', 'date', now().date())|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Unique Admins</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ logs|map(attribute='admin_id')|unique|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Delete Actions</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ logs|selectattr('action', 'equalto', 'DELETE')|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-trash fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Log Details Modal -->
+<div class="modal fade" id="logModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-info-circle me-2"></i>Log Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="logDetails">
+                Loading...
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let logsData = {{ logs|tojson|safe }};
+
+function applyFilters() {
+    const action = document.getElementById('actionFilter').value;
+    const entity = document.getElementById('entityFilter').value;
+    const date = document.getElementById('dateFilter').value;
+    
+    let filteredLogs = logsData;
+    
+    if (action !== 'all') {
+        filteredLogs = filteredLogs.filter(log => log.action === action);
+    }
+    
+    if (entity !== 'all') {
+        filteredLogs = filteredLogs.filter(log => log.entity_type === entity);
+    }
+    
+    if (date) {
+        filteredLogs = filteredLogs.filter(log => 
+            log.created_at.startsWith(date)
+        );
+    }
+    
+    updateTable(filteredLogs);
+}
+
+function updateTable(logs) {
+    const tbody = document.querySelector('#logsTable tbody');
+    if (!tbody) return;
+    
+    if (logs.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center py-4">
+                    <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No logs match your filters</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    let html = '';
+    logs.forEach(log => {
+        const badgeClass = {
+            'CREATE': 'success',
+            'UPDATE': 'warning',
+            'DELETE': 'danger',
+            'VIEW': 'info',
+            'EXPORT': 'secondary'
+        }[log.action] || 'dark';
+        
+        html += `
+            <tr>
+                <td>${new Date(log.created_at).toLocaleString()}</td>
+                <td><span class="badge bg-info">${log.admin_email}</span></td>
+                <td><span class="badge bg-${badgeClass}">${log.action}</span></td>
+                <td>${log.entity_type}</td>
+                <td><code>${log.entity_id || 'N/A'}</code></td>
+                <td>${log.description || ''}</td>
+                <td><code>${log.ip_address}</code></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-info" onclick="viewLogDetails(${log.id})">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = html;
+}
+
+function viewLogDetails(logId) {
+    const log = logsData.find(l => l.id === logId);
+    if (!log) return;
+    
+    const details = `
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Log ID:</strong> ${log.id}</p>
+                <p><strong>Admin:</strong> ${log.admin_email}</p>
+                <p><strong>Action:</strong> ${log.action}</p>
+                <p><strong>Entity:</strong> ${log.entity_type}</p>
+                <p><strong>Entity ID:</strong> ${log.entity_id || 'N/A'}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Timestamp:</strong> ${new Date(log.created_at).toLocaleString()}</p>
+                <p><strong>IP Address:</strong> ${log.ip_address}</p>
+                <p><strong>Description:</strong> ${log.description || 'N/A'}</p>
+            </div>
+        </div>
+        ${log.old_values ? `
+            <hr>
+            <h6>Old Values:</h6>
+            <pre class="bg-light p-2">${JSON.stringify(JSON.parse(log.old_values), null, 2)}</pre>
+        ` : ''}
+        ${log.new_values ? `
+            <hr>
+            <h6>New Values:</h6>
+            <pre class="bg-light p-2">${JSON.stringify(JSON.parse(log.new_values), null, 2)}</pre>
+        ` : ''}
+    `;
+    
+    document.getElementById('logDetails').innerHTML = details;
+    new bootstrap.Modal(document.getElementById('logModal')).show();
+}
+
+function exportLogs() {
+    let csv = 'Timestamp,Admin,Action,Entity,Entity ID,Description,IP Address\n';
+    
+    logsData.forEach(log => {
+        csv += `"${log.created_at}","${log.admin_email}","${log.action}","${log.entity_type}",`;
+        csv += `"${log.entity_id || ''}","${log.description || ''}","${log.ip_address}"\n`;
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `activity_logs_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function refreshLogs() {
+    location.reload();
+}
+</script>
+
+<style>
+.border-left-primary {
+    border-left: 4px solid #4e73df !important;
+}
+.border-left-success {
+    border-left: 4px solid #1cc88a !important;
+}
+.border-left-info {
+    border-left: 4px solid #36b9cc !important;
+}
+.border-left-warning {
+    border-left: 4px solid #f6c23e !important;
+}
+.text-xs {
+    font-size: 0.7rem;
+}
+</style>
+{% endblock %}

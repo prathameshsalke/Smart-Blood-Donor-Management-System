@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Smart Blood Donor{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section bg-danger text-white py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">Donate Blood, Save Lives</h1>
+                <p class="lead mb-4">Join thousands of heroes who donate blood regularly. Every drop counts, every life matters.</p>
+                <div class="d-flex gap-3">
+                    {% if not current_user.is_authenticated %}
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg">
+                            <i class="fas fa-user-plus me-2"></i>Become a Donor
+                        </a>
+                    {% endif %}
+                    <a href="{{ url_for('emergency') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Emergency Request
+                    </a>
+                </div>
+                
+                <!-- Stats -->
+                <div class="row mt-5">
+                    <div class="col-4">
+                        <h2 class="display-6 fw-bold">{{ stats.total_donors }}</h2>
+                        <p class="small opacity-75">Total Donors</p>
+                    </div>
+                    <div class="col-4">
+                        <h2 class="display-6 fw-bold">{{ stats.eligible_donors }}</h2>
+                        <p class="small opacity-75">Available Now</p>
+                    </div>
+                    <div class="col-4">
+                        <h2 class="display-6 fw-bold">{{ stats.lives_saved }}</h2>
+                        <p class="small opacity-75">Lives Saved</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <img src="{{ url_for('static', filename='images/hero-image.png') }}" 
+                     alt="Blood Donation" class="img-fluid d-none d-lg-block">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center text-danger mb-5">Why Choose Us?</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card feature-card h-100 border-danger">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-map-marked-alt fa-3x text-danger"></i>
+                        </div>
+                        <h4>Geo-Location Search</h4>
+                        <p class="text-muted">Find nearest donors in real-time within 10km radius using advanced location technology.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card feature-card h-100 border-danger">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-robot fa-3x text-danger"></i>
+                        </div>
+                        <h4>AI Predictions</h4>
+                        <p class="text-muted">ML-powered donor availability and blood demand forecasting for better planning.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card feature-card h-100 border-danger">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-bolt fa-3x text-danger"></i>
+                        </div>
+                        <h4>Emergency Response</h4>
+                        <p class="text-muted">Instant notifications to matching donors during emergency situations.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Blood Type Compatibility -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center text-danger mb-5">Blood Type Compatibility</h2>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="table-responsive">
+                            <table class="table table-hover text-center">
+                                <thead class="table-danger">
+                                    <tr>
+                                        <th>Blood Type</th>
+                                        <th>Can Donate To</th>
+                                        <th>Can Receive From</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong class="text-danger">A+</strong></td>
+                                        <td>A+, AB+</td>
+                                        <td>A+, A-, O+, O-</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong class="text-danger">A-</strong></td>
+                                        <td>A+, A-, AB+, AB-</td>
+                                        <td>A-, O-</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong class="text-danger">B+</strong></td>
+                                        <td>B+, AB+</td>
+                                        <td>B+, B-, O+, O-</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong class="text-danger">B-</strong></td>
+                                        <td>B+, B-, AB+, AB-</td>
+                                        <td>B-, O-</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong class="text-danger">AB+</strong></td>
+                                        <td>AB+</td>
+                                        <td>All Types</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong class="text-danger">AB-</strong></td>
+                                        <td>AB+, AB-</td>
+                                        <td>AB-, A-, B-, O-</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong class="text-danger">O+</strong></td>
+                                        <td>O+, A+, B+, AB+</td>
+                                        <td>O+, O-</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong class="text-danger">O-</strong></td>
+                                        <td>All Types</td>
+                                        <td>O-</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="text-center text-muted mt-3">
+                            <i class="fas fa-info-circle me-1"></i>
+                            O- is the universal donor. AB+ is the universal recipient.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center text-danger mb-5">How It Works</h2>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="step-box text-center">
+                    <div class="step-number">1</div>
+                    <i class="fas fa-user-plus fa-3x text-danger mb-3"></i>
+                    <h5>Register</h5>
+                    <p class="text-muted">Create your donor profile with blood type and location</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="step-box text-center">
+                    <div class="step-number">2</div>
+                    <i class="fas fa-bell fa-3x text-danger mb-3"></i>
+                    <h5>Get Notified</h5>
+                    <p class="text-muted">Receive alerts for matching blood requests in your area</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="step-box text-center">
+                    <div class="step-number">3</div>
+                    <i class="fas fa-hand-holding-heart fa-3x text-danger mb-3"></i>
+                    <h5>Donate</h5>
+                    <p class="text-muted">Respond to requests and save lives at nearby hospitals</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="step-box text-center">
+                    <div class="step-number">4</div>
+                    <i class="fas fa-certificate fa-3x text-danger mb-3"></i>
+                    <h5>Get Certificate</h5>
+                    <p class="text-muted">Receive digital certificate for every donation</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center text-danger mb-5">What Our Donors Say</h2>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card testimonial-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex mb-3">
+                            <img src="{{ url_for('static', filename='images/testimonial1.jpg') }}" 
+                                 class="rounded-circle me-3" width="60" height="60" alt="Donor">
+                            <div>
+                                <h6 class="mb-0">Rahul Sharma</h6>
+                                <small class="text-muted">Regular Donor</small>
+                            </div>
+                        </div>
+                        <p class="text-muted fst-italic">
+                            "I've been donating blood for 5 years. This platform makes it so easy to find donation camps and emergency requests nearby. The certificate feature is a nice touch!"
+                        </p>
+                        <div class="text-warning">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card testimonial-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex mb-3">
+                            <img src="{{ url_for('static', filename='images/testimonial2.jpg') }}" 
+                                 class="rounded-circle me-3" width="60" height="60" alt="Donor">
+                            <div>
+                                <h6 class="mb-0">Priya Patel</h6>
+                                <small class="text-muted">First-time Donor</small>
+                            </div>
+                        </div>
+                        <p class="text-muted fst-italic">
+                            "I was nervous about donating blood, but the app guided me through the process. The eligibility check helped me prepare, and now I'm a regular donor!"
+                        </p>
+                        <div class="text-warning">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card testimonial-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex mb-3">
+                            <img src="{{ url_for('static', filename='images/testimonial3.jpg') }}" 
+                                 class="rounded-circle me-3" width="60" height="60" alt="Donor">
+                            <div>
+                                <h6 class="mb-0">Dr. Amit Kumar</h6>
+                                <small class="text-muted">Hospital Administrator</small>
+                            </div>
+                        </div>
+                        <p class="text-muted fst-italic">
+                            "As a hospital admin, this platform has been invaluable. We can quickly find donors for emergency cases. The demand forecasting helps us plan better."
+                        </p>
+                        <div class="text-warning">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5 bg-danger text-white">
+    <div class="container text-center">
+        <h2 class="mb-4">Ready to Make a Difference?</h2>
+        <p class="lead mb-4">Join thousands of donors saving lives every day.</p>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg">
+            <i class="fas fa-hand-holding-heart me-2"></i>Register as Donor
+        </a>
+    </div>
+</section>
+
+<style>
+.hero-section {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+}
+
+.feature-card {
+    transition: all 0.3s;
+    border-width: 2px;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(220, 53, 69, 0.2);
+}
+
+.feature-icon {
+    width: 80px;
+    height: 80px;
+    line-height: 80px;
+    margin: 0 auto;
+    background: #fff5f5;
+    border-radius: 50%;
+}
+
+.step-box {
+    position: relative;
+    padding: 2rem 1rem;
+}
+
+.step-number {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    box-shadow: 0 2px 5px rgba(220, 53, 69, 0.3);
+}
+
+.testimonial-card {
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s;
+}
+
+.testimonial-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+}
+
+.table td, .table th {
+    vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+    .hero-section {
+        text-align: center;
+    }
+    
+    .step-box {
+        margin-bottom: 2rem;
+    }
+}
+</style>
+{% endblock %}

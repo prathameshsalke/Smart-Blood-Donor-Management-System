@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block title %}Take Photo - {{ super() }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    #camera-container {
+        max-width: 640px;
+        margin: 0 auto;
+        position: relative;
+    }
+    #video {
+        width: 100%;
+        border-radius: 10px;
+        border: 3px solid #dc3545;
+        background: #000;
+        transform: scaleX(-1); /* Mirror effect */
+    }
+    #canvas {
+        display: none;
+    }
+    #photo-preview {
+        width: 100%;
+        border-radius: 10px;
+        border: 3px solid #28a745;
+        display: none;
+        transform: scaleX(-1); /* Mirror effect */
+    }
+    .camera-controls {
+        margin-top: 20px;
+        text-align: center;
+    }
+    .camera-controls .btn {
+        margin: 0 5px;
+        min-width: 120px;
+    }
+    .camera-controls .btn i {
+        margin-right: 8px;
+    }
+    #flash-indicator {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: white;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.1s;
+        border-radius: 10px;
+    }
+    .flash {
+        opacity: 0.8 !important;
+    }
+    .device-select {
+        max-width: 300px;
+        margin: 15px auto;
+    }
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        color: white;
+        z-index: 10;
+    }
+    .countdown {
+        font-size: 48px;
+        font-weight: bold;
+        color: #dc3545;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-camera me-2"></i>Take Profile Photo
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Camera Selection -->
+                    <div class="device-select">
+                        <select class="form-select" id="cameraSelect">
+                            <option value="">Select Camera</option>
+                        </select>
+                    </div>
+
+                    <!-- Camera Container -->
+                    <div id="camera-container" class="position-relative">
+                        <video id="video" autoplay playsinline></video>
+                        <img id="photo-preview" src="#" alt="Preview">
+                        <div id="flash-indicator"></div>
+                        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+                            <div class="text-center">
+                                <div class="spinner-border text-danger mb-3" role="status"></div>
+                                <p>Processing...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="camera-controls">
+                        <button class="btn btn-danger" id="startCamera" onclick="startCamera()">
+                            <i class="fas fa-play"></i> Start Camera
+                        </button>
+                        <button class="btn btn-success" id="captureBtn" onclick="capturePhoto()" disabled>
+                            <i class="fas fa-camera"></i> Take Photo
+                        </button>
+                        <button class="btn btn-warning" id="retakeBtn" onclick="retakePhoto()" style="display: none;">
+                            <i class="fas fa-redo"></i> Retake
+                        </button>
+                        <button class="btn btn-primary" id="saveBtn" onclick="savePhoto()" style="display: none;">
+                            <i class="fas fa-save"></i> Save Photo
+                        </button>
+                    </div>
+
+                    <!-- Flash Option -->
+                    <div class="form-check text-center mt-3">
+                        <input class="form-check-input" type="checkbox" id="flashMode">
+                        <label class="form-check-label" for="flashMode">
+                            <i class="fas fa-bolt me-1"></i> Enable Flash
+                        </label>
+                    </div>
+
+                    <!-- Instructions -->
+                    <div class="alert alert-info mt-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Tips:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Ensure good lighting for best results</li>
+                            <li>Position your face clearly in the frame</li>
+                            <li>You can retake as many times as you want</li>
+                            <li>The photo will be automatically optimized</li>
+                        </ul>
+                    </div>
+
+                    <!-- Back Button -->
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('donor.edit_profile') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let video = document.getElementById('video');
+let canvas = document.createElement('canvas');
+let preview = document.getElementById('photo-preview');
+let flashIndicator = document.getElementById('flash-indicator');
+let stream = null;
+let devices = [];
+let currentDeviceId = null;
+
+// Get available cameras
+async function getCameras() {
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        const select = document.getElementById('cameraSelect');
+        select.innerHTML = '<option value="">Select Camera</option>';
+        
+        videoDevices.forEach((device, index) => {
+            const option = document.createElement('option');
+            option.value = device.deviceId;
+            option.text = device.label || `Camera ${index + 1}`;
+            select.appendChild(option);
+        });
+        
+        if (videoDevices.length > 0) {
+            currentDeviceId = videoDevices[0].deviceId;
+            select.value = currentDeviceId;
+        }
+    } catch (error) {
+        console.error('Error getting cameras:', error);
+    }
+}
+
+// Start camera
+async function startCamera() {
+    const select = document.getElementById('cameraSelect');
+    const deviceId = select.value;
+    
+    if (!deviceId) {
+        alert('Please select a camera');
+        return;
+    }
+    
+    try {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        
+        const constraints = {
+            video: {
+                deviceId: { exact: deviceId },
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            },
+            audio: false
+        };
+        
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+        await video.play();
+        
+        document.getElementById('startCamera').disabled = true;
+        document.getElementById('captureBtn').disabled = false;
+        document.getElementById('retakeBtn').style.display = 'none';
+        document.getElementById('saveBtn').style.display = 'none';
+        video.style.display = 'block';
+        preview.style.display = 'none';
+        
+    } catch (error) {
+        console.error('Error starting camera:', error);
+        alert('Could not access camera. Please check permissions.');
+    }
+}
+
+// Capture photo
+function capturePhoto() {
+    // Set canvas dimensions to match video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Draw video frame to canvas
+    const context = canvas.getContext('2d');
+    
+    // Apply mirror effect to match video display
+    context.translate(canvas.width, 0);
+    context.scale(-1, 1);
+    
+    // Apply flash effect if enabled
+    if (document.getElementById('flashMode').checked) {
+        flashIndicator.classList.add('flash');
+        setTimeout(() => {
+            flashIndicator.classList.remove('flash');
+        }, 100);
+    }
+    
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Get image data
+    const imageData = canvas.toDataURL('image/jpeg', 0.9);
+    
+    // Show preview
+    preview.src = imageData;
+    video.style.display = 'none';
+    preview.style.display = 'block';
+    
+    // Update buttons
+    document.getElementById('captureBtn').disabled = true;
+    document.getElementById('retakeBtn').style.display = 'inline-block';
+    document.getElementById('saveBtn').style.display = 'inline-block';
+    
+    // Store image data for saving
+    window.capturedImage = imageData;
+}
+
+// Retake photo
+function retakePhoto() {
+    video.style.display = 'block';
+    preview.style.display = 'none';
+    document.getElementById('captureBtn').disabled = false;
+    document.getElementById('retakeBtn').style.display = 'none';
+    document.getElementById('saveBtn').style.display = 'none';
+    window.capturedImage = null;
+}
+
+// Save photo
+async function savePhoto() {
+    if (!window.capturedImage) {
+        alert('No photo captured');
+        return;
+    }
+    
+    // Show loading
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('saveBtn').disabled = true;
+    
+    try {
+        const response = await fetch('/donor/save-camera-photo', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ image: window.capturedImage })
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            alert('Photo saved successfully!');
+            window.location.href = "{{ url_for('donor.edit_profile') }}";
+        } else {
+            alert('Error saving photo: ' + data.message);
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('saveBtn').disabled = false;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error saving photo');
+        document.getElementById('loadingOverlay').style.display = 'none';
+        document.getElementById('saveBtn').disabled = false;
+    }
+}
+
+// Camera selection change
+document.getElementById('cameraSelect').addEventListener('change', function(e) {
+    if (e.target.value) {
+        currentDeviceId = e.target.value;
+        startCamera();
+    }
+});
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    getCameras();
+});
+</script>
+{% endblock %}

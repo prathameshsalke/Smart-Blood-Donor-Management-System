@@ -1,0 +1,215 @@
+{% macro navbar() %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-danger sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="{{ url_for('main.index') }}">
+            <i class="fas fa-tint me-2"></i>Smart Blood Donor
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}" 
+                       href="{{ url_for('main.index') }}">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.about' %}active{% endif %}" 
+                       href="{{ url_for('main.about') }}">
+                        <i class="fas fa-info-circle"></i> About
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.contact' %}active{% endif %}" 
+                       href="{{ url_for('main.contact') }}">
+                        <i class="fas fa-envelope"></i> Contact
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.search_donors' %}active{% endif %}" 
+                       href="{{ url_for('main.search_donors') }}">
+                        <i class="fas fa-search"></i> Find Donors
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link btn btn-warning text-dark mx-2" 
+                       href="{{ url_for('main.emergency') }}">
+                        <i class="fas fa-exclamation-triangle"></i> Emergency
+                    </a>
+                </li>
+                
+                {% if current_user.is_authenticated %}
+                    <!-- User Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" 
+                           role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle"></i> {{ current_user.name }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            {% if current_user.is_admin() %}
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">
+                                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('admin.manage_donors') }}">
+                                        <i class="fas fa-users"></i> Manage Donors
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('admin.manage_requests') }}">
+                                        <i class="fas fa-tint"></i> Manage Requests
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('donor.dashboard') }}">
+                                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('donor.edit_profile') }}">
+                                        <i class="fas fa-user-edit"></i> Edit Profile
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('donor.donation_history') }}">
+                                        <i class="fas fa-history"></i> Donation History
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('donor.nearby_donors') }}">
+                                        <i class="fas fa-map-marked-alt"></i> Nearby Donors
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            <li><hr class="dropdown-divider"></li>
+                            
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth.login') }}">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-light text-danger ms-2" 
+                           href="{{ url_for('auth.register') }}">
+                            <i class="fas fa-user-plus"></i> Register
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Emergency Floating Button -->
+{% if not request.endpoint or 'emergency' not in request.endpoint %}
+<div class="emergency-float">
+    <a href="{{ url_for('main.emergency') }}" class="btn btn-danger btn-lg rounded-circle shadow">
+        <i class="fas fa-exclamation-triangle"></i>
+    </a>
+    <span class="emergency-tooltip">Emergency?</span>
+</div>
+{% endif %}
+
+<style>
+.navbar {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.navbar .nav-link {
+    font-weight: 500;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.3s;
+}
+
+.navbar .nav-link:hover {
+    background: rgba(255,255,255,0.1);
+    border-radius: 5px;
+}
+
+.navbar .nav-link.active {
+    background: rgba(255,255,255,0.2);
+    border-radius: 5px;
+}
+
+.emergency-float {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 999;
+    animation: pulse 2s infinite;
+}
+
+.emergency-float .btn {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.emergency-tooltip {
+    position: absolute;
+    right: 70px;
+    top: 15px;
+    background: white;
+    color: #dc3545;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+    white-space: nowrap;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    display: none;
+}
+
+.emergency-float:hover .emergency-tooltip {
+    display: block;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@media (max-width: 768px) {
+    .emergency-float {
+        bottom: 20px;
+        right: 20px;
+    }
+    
+    .emergency-float .btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+    }
+}
+</style>
+{% endmacro %}

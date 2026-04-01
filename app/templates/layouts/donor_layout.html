@@ -1,0 +1,183 @@
+{% extends "layouts/base.html" %}
+
+{% block body %}
+<div class="donor-wrapper">
+    <!-- Donor Sidebar -->
+    <nav class="donor-sidebar">
+        <div class="sidebar-header">
+            <h5>
+                <i class="fas fa-user-circle me-2"></i>Donor Panel
+            </h5>
+            <p class="small text-muted mb-0">{{ current_user.name }}</p>
+        </div>
+        
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'donor.dashboard' %}active{% endif %}" 
+                   href="{{ url_for('donor.dashboard') }}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'donor.edit_profile' %}active{% endif %}" 
+                   href="{{ url_for('donor.edit_profile') }}">
+                    <i class="fas fa-user-edit"></i> Edit Profile
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'donor.donation_history' %}active{% endif %}" 
+                   href="{{ url_for('donor.donation_history') }}">
+                    <i class="fas fa-history"></i> Donation History
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'donor.eligibility_status' %}active{% endif %}" 
+                   href="{{ url_for('donor.eligibility_status') }}">
+                    <i class="fas fa-heartbeat"></i> Eligibility Status
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'donor.nearby_donors' %}active{% endif %}" 
+                   href="{{ url_for('donor.nearby_donors') }}">
+                    <i class="fas fa-map-marked-alt"></i> Nearby Donors
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'donor.nearby_hospitals' %}active{% endif %}" 
+                   href="{{ url_for('donor.nearby_hospitals') }}">
+                    <i class="fas fa-hospital"></i> Nearby Hospitals
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'donor.emergency_search' %}active{% endif %}" 
+                   href="{{ url_for('donor.emergency_search') }}">
+                    <i class="fas fa-exclamation-triangle"></i> Emergency Search
+                </a>
+            </li>
+            
+            <li class="nav-item mt-3">
+                <hr>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('main.index') }}">
+                    <i class="fas fa-home"></i> Back to Site
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </li>
+        </ul>
+        
+        <!-- Quick Stats -->
+        <div class="sidebar-footer">
+            <div class="stats-box">
+                <small class="text-muted">Blood Type</small>
+                <h6 class="text-danger">{{ current_user.donor_profile.blood_type }}</h6>
+            </div>
+            <div class="stats-box">
+                <small class="text-muted">Donations</small>
+                <h6>{{ current_user.donor_profile.total_donations }}</h6>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="donor-main">
+        <div class="container-fluid">
+            {% block donor_content %}{% endblock %}
+        </div>
+    </main>
+</div>
+
+<style>
+.donor-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+.donor-sidebar {
+    width: 260px;
+    background: #fff;
+    border-right: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 56px;
+    left: 0;
+    bottom: 0;
+    z-index: 90;
+    overflow-y: auto;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+}
+
+.donor-sidebar .sidebar-header {
+    padding: 1.5rem 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.donor-sidebar .nav-link {
+    color: #495057;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s;
+}
+
+.donor-sidebar .nav-link:hover {
+    color: #dc3545;
+    background: #f8f9fa;
+    padding-left: 2rem;
+}
+
+.donor-sidebar .nav-link.active {
+    color: #dc3545;
+    background: #fff5f5;
+    border-right: 3px solid #dc3545;
+}
+
+.donor-sidebar .nav-link i {
+    width: 1.5rem;
+    font-size: 1rem;
+}
+
+.donor-sidebar .sidebar-footer {
+    padding: 1rem;
+    border-top: 1px solid #e9ecef;
+    margin-top: auto;
+    display: flex;
+    justify-content: space-around;
+}
+
+.stats-box {
+    text-align: center;
+}
+
+.donor-main {
+    flex: 1;
+    margin-left: 260px;
+    margin-top: 56px;
+    padding: 2rem;
+    background: #f8f9fa;
+    min-height: calc(100vh - 56px);
+}
+
+@media (max-width: 768px) {
+    .donor-sidebar {
+        width: 0;
+        visibility: hidden;
+    }
+    
+    .donor-main {
+        margin-left: 0;
+    }
+}
+</style>
+{% endblock %}

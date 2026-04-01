@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Us - Smart Blood Donor{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h1 class="text-center text-danger mb-5">Contact Us</h1>
+            
+            <!-- Contact Form -->
+            <div class="card shadow-sm mb-5">
+                <div class="card-body p-4">
+                    <form id="contactForm" onsubmit="submitContactForm(event)">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Your Name *</label>
+                                <input type="text" class="form-control" id="name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email Address *</label>
+                                <input type="email" class="form-control" id="email" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone" pattern="[0-9]{10}" placeholder="10 digit mobile number">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Subject *</label>
+                            <select class="form-select" id="subject" required>
+                                <option value="">Select Subject</option>
+                                <option value="general">General Inquiry</option>
+                                <option value="donation">Donation Related</option>
+                                <option value="emergency">Emergency Request</option>
+                                <option value="feedback">Feedback</option>
+                                <option value="complaint">Complaint</option>
+                                <option value="partnership">Partnership</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Message *</label>
+                            <textarea class="form-control" id="message" rows="5" required></textarea>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="copy" checked>
+                            <label class="form-check-label" for="copy">Send me a copy of this message</label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-danger btn-lg w-100">
+                            <i class="fas fa-paper-plane me-2"></i>Send Message
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="row g-4 mb-5">
+                <div class="col-md-4">
+                    <div class="card text-center h-100 border-danger">
+                        <div class="card-body">
+                            <i class="fas fa-map-marker-alt fa-3x text-danger mb-3"></i>
+                            <h5>Visit Us</h5>
+                            <p class="text-muted mb-0">
+                                123 Blood Donor Street,<br>
+                                Andheri East, Mumbai<br>
+                                Maharashtra 400069
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card text-center h-100 border-danger">
+                        <div class="card-body">
+                            <i class="fas fa-phone-alt fa-3x text-danger mb-3"></i>
+                            <h5>Call Us</h5>
+                            <p class="text-muted mb-0">
+                                <strong class="text-danger">Emergency:</strong><br>
+                                <a href="tel:104" class="text-decoration-none fw-bold text-danger">104</a> (24/7)<br>
+                                <strong class="text-danger">Support:</strong><br>
+                                <a href="tel:+911234567890" class="text-decoration-none text-dark">+91 12345 67890</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card text-center h-100 border-danger">
+                        <div class="card-body">
+                            <i class="fas fa-envelope fa-3x text-danger mb-3"></i>
+                            <h5>Email Us</h5>
+                            <p class="text-muted mb-0">
+                                <strong class="text-danger">General:</strong><br>
+                                <a href="mailto:info@blooddonor.com" class="text-decoration-none text-dark">info@blooddonor.com</a><br>
+                                <strong class="text-danger">Emergency:</strong><br>
+                                <a href="mailto:emergency@blooddonor.com" class="text-decoration-none text-dark">emergency@blooddonor.com</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map -->
+            <div class="card shadow-sm mb-5">
+                <div class="card-body p-0">
+                    <iframe 
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3770.555017283571!2d72.84773531490184!3d19.113256187069033!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7c9c1a0b1b1b1%3A0x4a7f3b3a1b1b1b1b!2sMumbai%2C%20Maharashtra!5e0!3m2!1sen!2sin!4v1620000000000!5m2!1sen!2sin" 
+                        width="100%" 
+                        height="400" 
+                        style="border:0;" 
+                        allowfullscreen="" 
+                        loading="lazy">
+                    </iframe>
+                </div>
+            </div>
+
+            <!-- FAQ Section -->
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-question-circle text-danger me-2"></i>Frequently Asked Questions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                    How quickly can I get a response?
+                                </button>
+                            </h2>
+                            <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    We aim to respond to all inquiries within 24 hours. For emergencies, please call our emergency helpline at 104.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                    Can I visit your office?
+                                </button>
+                            </h2>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Yes, our office is open Monday to Friday from 9 AM to 6 PM. Please schedule an appointment by emailing us.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                    Do you provide emergency support 24/7?
+                                </button>
+                            </h2>
+                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Yes, our emergency helpline (104) is available 24/7 for urgent blood requirements.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle me-2"></i>Message Sent
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-paper-plane fa-4x text-success mb-3"></i>
+                <h5>Thank You for Contacting Us!</h5>
+                <p class="text-muted">We'll get back to you within 24 hours.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function submitContactForm(event) {
+    event.preventDefault();
+    
+    // Get form data
+    const formData = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        subject: document.getElementById('subject').value,
+        message: document.getElementById('message').value,
+        copy: document.getElementById('copy').checked
+    };
+    
+    // Here you would typically send the data to your server
+    console.log('Form submitted:', formData);
+    
+    // Show success modal
+    new bootstrap.Modal(document.getElementById('successModal')).show();
+    
+    // Reset form
+    document.getElementById('contactForm').reset();
+}
+</script>
+
+<style>
+.accordion-button:not(.collapsed) {
+    background-color: #fff5f5;
+    color: #dc3545;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+    border-color: #dc3545;
+}
+
+.card {
+    transition: transform 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+@media (max-width: 768px) {
+    .card:hover {
+        transform: none;
+    }
+}
+</style>
+{% endblock %}

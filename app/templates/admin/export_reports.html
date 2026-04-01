@@ -1,0 +1,331 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block title %}Export Reports - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">
+        <i class="fas fa-download me-2"></i>Export Reports
+    </h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Export Reports</li>
+    </ol>
+
+    <div class="row">
+        <!-- Donors Export -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <i class="fas fa-users text-danger me-1"></i>
+                    Export Donors Data
+                </div>
+                <div class="card-body">
+                    <p>Export complete donor database including personal information, blood types, and donation history.</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Format</label>
+                        <select class="form-select" id="donorFormat">
+                            <option value="csv">CSV</option>
+                            <option value="excel">Excel</option>
+                            <option value="json">JSON</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Date Range</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="date" class="form-control" id="donorStartDate" placeholder="Start Date">
+                            </div>
+                            <div class="col-6">
+                                <input type="date" class="form-control" id="donorEndDate" placeholder="End Date">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Filters</label>
+                        <select class="form-select" id="donorFilter">
+                            <option value="all">All Donors</option>
+                            <option value="eligible">Eligible Only</option>
+                            <option value="active">Active Only</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn btn-danger w-100" onclick="exportDonors()">
+                        <i class="fas fa-download me-2"></i>Export Donors
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Requests Export -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <i class="fas fa-tint text-danger me-1"></i>
+                    Export Blood Requests
+                </div>
+                <div class="card-body">
+                    <p>Export blood request history including patient information, urgency levels, and status.</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Format</label>
+                        <select class="form-select" id="requestFormat">
+                            <option value="csv">CSV</option>
+                            <option value="excel">Excel</option>
+                            <option value="json">JSON</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Date Range</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="date" class="form-control" id="requestStartDate">
+                            </div>
+                            <div class="col-6">
+                                <input type="date" class="form-control" id="requestEndDate">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="requestStatus">
+                            <option value="all">All Requests</option>
+                            <option value="pending">Pending</option>
+                            <option value="fulfilled">Fulfilled</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn btn-danger w-100" onclick="exportRequests()">
+                        <i class="fas fa-download me-2"></i>Export Requests
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Donations Export -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <i class="fas fa-heartbeat text-danger me-1"></i>
+                    Export Donations
+                </div>
+                <div class="card-body">
+                    <p>Export donation history including donor information, dates, and verification status.</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Format</label>
+                        <select class="form-select" id="donationFormat">
+                            <option value="csv">CSV</option>
+                            <option value="excel">Excel</option>
+                            <option value="json">JSON</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Date Range</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="date" class="form-control" id="donationStartDate">
+                            </div>
+                            <div class="col-6">
+                                <input type="date" class="form-control" id="donationEndDate">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Verification</label>
+                        <select class="form-select" id="donationVerified">
+                            <option value="all">All Donations</option>
+                            <option value="verified">Verified Only</option>
+                            <option value="unverified">Unverified Only</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn btn-danger w-100" onclick="exportDonations()">
+                        <i class="fas fa-download me-2"></i>Export Donations
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Export -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <i class="fas fa-chart-bar text-danger me-1"></i>
+                    Export Analytics
+                </div>
+                <div class="card-body">
+                    <p>Export analytics data including statistics, trends, and performance metrics.</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Report Type</label>
+                        <select class="form-select" id="analyticsType">
+                            <option value="summary">Summary Report</option>
+                            <option value="detailed">Detailed Report</option>
+                            <option value="trends">Trends Analysis</option>
+                            <option value="comparison">Period Comparison</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Period</label>
+                        <select class="form-select" id="analyticsPeriod">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Format</label>
+                        <select class="form-select" id="analyticsFormat">
+                            <option value="pdf">PDF</option>
+                            <option value="excel">Excel</option>
+                            <option value="csv">CSV</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn btn-danger w-100" onclick="exportAnalytics()">
+                        <i class="fas fa-download me-2"></i>Generate Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Exports -->
+    <div class="card mt-4">
+        <div class="card-header bg-white">
+            <i class="fas fa-history me-1"></i>
+            Recent Exports
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Export Type</th>
+                            <th>Format</th>
+                            <th>Records</th>
+                            <th>Download</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentExports">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function exportDonors() {
+    const format = document.getElementById('donorFormat').value;
+    const startDate = document.getElementById('donorStartDate').value;
+    const endDate = document.getElementById('donorEndDate').value;
+    const filter = document.getElementById('donorFilter').value;
+    
+    let url = `/admin/export/donors?format=${format}`;
+    if (startDate) url += `&start=${startDate}`;
+    if (endDate) url += `&end=${endDate}`;
+    if (filter !== 'all') url += `&filter=${filter}`;
+    
+    window.location.href = url;
+}
+
+function exportRequests() {
+    const format = document.getElementById('requestFormat').value;
+    const startDate = document.getElementById('requestStartDate').value;
+    const endDate = document.getElementById('requestEndDate').value;
+    const status = document.getElementById('requestStatus').value;
+    
+    let url = `/admin/export/requests?format=${format}`;
+    if (startDate) url += `&start=${startDate}`;
+    if (endDate) url += `&end=${endDate}`;
+    if (status !== 'all') url += `&status=${status}`;
+    
+    window.location.href = url;
+}
+
+function exportDonations() {
+    const format = document.getElementById('donationFormat').value;
+    const startDate = document.getElementById('donationStartDate').value;
+    const endDate = document.getElementById('donationEndDate').value;
+    const verified = document.getElementById('donationVerified').value;
+    
+    let url = `/admin/export/donations?format=${format}`;
+    if (startDate) url += `&start=${startDate}`;
+    if (endDate) url += `&end=${endDate}`;
+    if (verified !== 'all') url += `&verified=${verified === 'verified'}`;
+    
+    window.location.href = url;
+}
+
+function exportAnalytics() {
+    const type = document.getElementById('analyticsType').value;
+    const period = document.getElementById('analyticsPeriod').value;
+    const format = document.getElementById('analyticsFormat').value;
+    
+    window.location.href = `/admin/export/analytics?type=${type}&period=${period}&format=${format}`;
+}
+
+// Load recent exports
+function loadRecentExports() {
+    fetch('/api/recent-exports')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('recentExports');
+            if (!tbody) return;
+            
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center py-3">
+                            <p class="text-muted mb-0">No recent exports</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            data.forEach(export_ => {
+                html += `
+                    <tr>
+                        <td>${new Date(export_.created_at).toLocaleString()}</td>
+                        <td><span class="badge bg-danger">${export_.type}</span></td>
+                        <td><span class="badge bg-info">${export_.format}</span></td>
+                        <td>${export_.record_count}</td>
+                        <td>
+                            <a href="${export_.download_url}" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error loading recent exports:', error);
+        });
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', loadRecentExports);
+</script>
+{% endblock %}

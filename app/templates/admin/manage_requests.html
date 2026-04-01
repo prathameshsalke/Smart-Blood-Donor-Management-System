@@ -1,0 +1,589 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block title %}Manage Requests - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .urgency-badge {
+        font-size: 0.85rem;
+        padding: 5px 10px;
+        border-radius: 20px;
+    }
+    .status-badge {
+        font-size: 0.85rem;
+        padding: 5px 10px;
+        border-radius: 20px;
+    }
+    .request-card {
+        transition: all 0.3s;
+        border-left: 4px solid transparent;
+    }
+    .request-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .filter-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    .action-btn {
+        margin: 0 2px;
+        transition: all 0.2s;
+    }
+    .action-btn:hover {
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">
+        <i class="fas fa-tint me-2"></i>Manage Blood Requests
+    </h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Manage Requests</li>
+    </ol>
+
+    <!-- Filters -->
+    <div class="filter-section">
+        <div class="row">
+            <div class="col-md-2 mb-3">
+                <label class="form-label fw-bold">Blood Type</label>
+                <select class="form-select" id="bloodTypeFilter">
+                    <option value="">All</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                </select>
+            </div>
+            <div class="col-md-2 mb-3">
+                <label class="form-label fw-bold">Urgency</label>
+                <select class="form-select" id="urgencyFilter">
+                    <option value="">All</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="emergency">Emergency</option>
+                </select>
+            </div>
+            <div class="col-md-2 mb-3">
+                <label class="form-label fw-bold">Status</label>
+                <select class="form-select" id="statusFilter">
+                    <option value="">All</option>
+                    <option value="pending">Pending</option>
+                    <option value="fulfilled">Fulfilled</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="expired">Expired</option>
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label fw-bold">Date Range</label>
+                <input type="date" class="form-control" id="dateFilter">
+            </div>
+            <div class="col-md-3 mb-3 d-flex align-items-end">
+                <button class="btn btn-danger w-100 me-2" onclick="applyFilters()">
+                    <i class="fas fa-search me-2"></i>Search
+                </button>
+                <button class="btn btn-outline-secondary" onclick="resetFilters()">
+                    <i class="fas fa-redo"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Requests Table -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2 text-danger"></i>
+                    Blood Requests
+                    <span class="badge bg-danger ms-2" id="requestCount">{{ requests|length }}</span>
+                </h5>
+                <div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="exportRequests()">
+                        <i class="fas fa-download me-1"></i>Export
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="requestsTable">
+                    <thead class="table-danger">
+                        <tr>
+                            <th>Request ID</th>
+                            <th>Patient</th>
+                            <th>Blood Type</th>
+                            <th>Units</th>
+                            <th>Urgency</th>
+                            <th>Hospital</th>
+                            <th>Created</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in requests %}
+                        <tr data-request-id="{{ request.request_id }}">
+                            <td><code>{{ request.request_id }}</code></td>
+                            <td>{{ request.patient_name }}</td>
+                            <td><span class="badge bg-danger">{{ request.blood_type_needed }}</span></td>
+                            <td>{{ request.units_needed }}</td>
+                            <td>
+                                {% if request.urgency == 'emergency' %}
+                                    <span class="badge bg-danger urgency-badge">Emergency</span>
+                                {% elif request.urgency == 'high' %}
+                                    <span class="badge bg-warning urgency-badge">High</span>
+                                {% elif request.urgency == 'medium' %}
+                                    <span class="badge bg-info urgency-badge">Medium</span>
+                                {% else %}
+                                    <span class="badge bg-secondary urgency-badge">Low</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ request.hospital_name or 'N/A' }}</td>
+                            <td>{{ request.created_at.strftime('%Y-%m-%d %H:%M') if request.created_at else 'N/A' }}</td>
+                            <td>
+                                {% if request.status == 'pending' %}
+                                    <span class="badge bg-warning status-badge">Pending</span>
+                                {% elif request.status == 'fulfilled' %}
+                                    <span class="badge bg-success status-badge">Fulfilled</span>
+                                {% elif request.status == 'cancelled' %}
+                                    <span class="badge bg-secondary status-badge">Cancelled</span>
+                                {% else %}
+                                    <span class="badge bg-dark status-badge">Expired</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-sm btn-outline-info action-btn" 
+                                            onclick="viewRequest('{{ request.request_id }}')" 
+                                            title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    {% if request.status == 'pending' %}
+                                    <button class="btn btn-sm btn-outline-success action-btn" 
+                                            onclick="markFulfilled('{{ request.request_id }}')" 
+                                            title="Mark as Fulfilled">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger action-btn" 
+                                            onclick="cancelRequest('{{ request.request_id }}')" 
+                                            title="Cancel Request">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1">Previous</a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item"><a class="page-link" href="#">4</a></li>
+                    <li class="page-item"><a class="page-link" href="#">5</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Requests</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ requests|length }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-tint fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Pending</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ requests|selectattr('status', 'equalto', 'pending')|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Fulfilled</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ requests|selectattr('status', 'equalto', 'fulfilled')|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Emergency</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ requests|selectattr('urgency', 'equalto', 'emergency')|selectattr('status', 'equalto', 'pending')|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Request Modal -->
+<div class="modal fade" id="viewRequestModal" tabindex="-1" aria-labelledby="viewRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="viewRequestModalLabel">
+                    <i class="fas fa-tint me-2"></i>Request Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="requestDetails">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-danger" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================
+// FIXED: Manual JSON construction instead of |tojson
+// ============================================
+let requestsData = [
+    {% for request in requests %}
+    {
+        id: {{ request.id }},
+        request_id: "{{ request.request_id }}",
+        patient_name: "{{ request.patient_name|replace('"', '\\"') }}",
+        patient_age: {{ request.patient_age or 'null' }},
+        patient_gender: "{{ request.patient_gender or '' }}",
+        blood_type_needed: "{{ request.blood_type_needed }}",
+        units_needed: {{ request.units_needed }},
+        urgency: "{{ request.urgency }}",
+        status: "{{ request.status }}",
+        hospital_name: "{{ request.hospital_name|replace('"', '\\"') if request.hospital_name else '' }}",
+        hospital_address: "{{ request.hospital_address|replace('"', '\\"') if request.hospital_address else '' }}",
+        requester_name: "{{ request.requester_name|replace('"', '\\"') }}",
+        requester_phone: "{{ request.requester_phone }}",
+        requester_email: "{{ request.requester_email or '' }}",
+        requester_type: "{{ request.requester_type or '' }}",
+        reason: "{{ request.reason|replace('"', '\\"') if request.reason else '' }}",
+        notified_donors: {{ request.notified_donors }},
+        accepted_donors: {{ request.accepted_donors }},
+        created_at: "{{ request.created_at.strftime('%Y-%m-%d %H:%M:%S') if request.created_at else '' }}",
+        expires_at: "{{ request.expires_at.strftime('%Y-%m-%d %H:%M:%S') if request.expires_at else '' }}",
+        fulfilled_at: "{{ request.fulfilled_at.strftime('%Y-%m-%d %H:%M:%S') if request.fulfilled_at else '' }}",
+        required_by_date: "{{ request.required_by_date.strftime('%Y-%m-%d') if request.required_by_date else '' }}",
+        requester_latitude: {{ request.requester_latitude or 'null' }},
+        requester_longitude: {{ request.requester_longitude or 'null' }},
+        search_radius: {{ request.search_radius }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+
+// Apply filters
+function applyFilters() {
+    const bloodType = document.getElementById('bloodTypeFilter').value;
+    const urgency = document.getElementById('urgencyFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    const date = document.getElementById('dateFilter').value;
+    
+    const filtered = requestsData.filter(request => {
+        if (bloodType && request.blood_type_needed !== bloodType) return false;
+        if (urgency && request.urgency !== urgency) return false;
+        if (status && request.status !== status) return false;
+        if (date && !request.created_at.startsWith(date)) return false;
+        return true;
+    });
+    
+    updateTable(filtered);
+    document.getElementById('requestCount').textContent = filtered.length;
+}
+
+// Reset filters
+function resetFilters() {
+    document.getElementById('bloodTypeFilter').value = '';
+    document.getElementById('urgencyFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('dateFilter').value = '';
+    updateTable(requestsData);
+    document.getElementById('requestCount').textContent = requestsData.length;
+}
+
+// Update table with filtered requests
+function updateTable(requests) {
+    const tbody = document.querySelector('#requestsTable tbody');
+    if (!tbody) return;
+    
+    if (requests.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center py-5">
+                    <i class="fas fa-tint fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Requests Found</h5>
+                    <p class="text-muted">Try adjusting your filter criteria</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    let html = '';
+    requests.forEach(request => {
+        const urgencyClass = {
+            'emergency': 'danger',
+            'high': 'warning',
+            'medium': 'info',
+            'low': 'secondary'
+        }[request.urgency] || 'secondary';
+        
+        const statusClass = {
+            'pending': 'warning',
+            'fulfilled': 'success',
+            'cancelled': 'secondary',
+            'expired': 'dark'
+        }[request.status] || 'secondary';
+        
+        html += `
+            <tr data-request-id="${request.request_id}">
+                <td><code>${request.request_id}</code></td>
+                <td>${request.patient_name}</td>
+                <td><span class="badge bg-danger">${request.blood_type_needed}</span></td>
+                <td>${request.units_needed}</td>
+                <td><span class="badge bg-${urgencyClass} urgency-badge">${request.urgency}</span></td>
+                <td>${request.hospital_name || 'N/A'}</td>
+                <td>${request.created_at ? request.created_at.split(' ')[0] : 'N/A'}</td>
+                <td><span class="badge bg-${statusClass} status-badge">${request.status}</span></td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-sm btn-outline-info action-btn" 
+                                onclick="viewRequest('${request.request_id}')" 
+                                title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        ${request.status === 'pending' ? `
+                            <button class="btn btn-sm btn-outline-success action-btn" 
+                                    onclick="markFulfilled('${request.request_id}')" 
+                                    title="Mark as Fulfilled">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger action-btn" 
+                                    onclick="cancelRequest('${request.request_id}')" 
+                                    title="Cancel Request">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = html;
+}
+
+// View request details
+function viewRequest(requestId) {
+    const request = requestsData.find(r => r.request_id === requestId);
+    if (!request) return;
+    
+    const urgencyClass = {
+        'emergency': 'danger',
+        'high': 'warning',
+        'medium': 'info',
+        'low': 'secondary'
+    }[request.urgency] || 'secondary';
+    
+    const statusClass = {
+        'pending': 'warning',
+        'fulfilled': 'success',
+        'cancelled': 'secondary',
+        'expired': 'dark'
+    }[request.status] || 'secondary';
+    
+    const details = `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <strong class="text-danger">Request Information</strong>
+                </div>
+                <p><strong>Request ID:</strong> <code>${request.request_id}</code></p>
+                <p><strong>Patient:</strong> ${request.patient_name}</p>
+                <p><strong>Age:</strong> ${request.patient_age || 'N/A'}</p>
+                <p><strong>Gender:</strong> ${request.patient_gender || 'N/A'}</p>
+                <p><strong>Blood Type:</strong> <span class="badge bg-danger">${request.blood_type_needed}</span></p>
+                <p><strong>Units Needed:</strong> ${request.units_needed}</p>
+                <p><strong>Urgency:</strong> <span class="badge bg-${urgencyClass}">${request.urgency}</span></p>
+                <p><strong>Status:</strong> <span class="badge bg-${statusClass}">${request.status}</span></p>
+                <p><strong>Reason:</strong> ${request.reason || 'N/A'}</p>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <strong class="text-danger">Requester Information</strong>
+                </div>
+                <p><strong>Name:</strong> ${request.requester_name}</p>
+                <p><strong>Phone:</strong> <a href="tel:${request.requester_phone}">${request.requester_phone}</a></p>
+                <p><strong>Email:</strong> <a href="mailto:${request.requester_email}">${request.requester_email || 'N/A'}</a></p>
+                <p><strong>Type:</strong> ${request.requester_type || 'N/A'}</p>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <strong class="text-danger">Hospital Information</strong>
+                </div>
+                <p><strong>Hospital:</strong> ${request.hospital_name || 'N/A'}</p>
+                <p><strong>Address:</strong> ${request.hospital_address || 'N/A'}</p>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <strong class="text-danger">Timeline</strong>
+                </div>
+                <p><strong>Created:</strong> ${request.created_at || 'N/A'}</p>
+                <p><strong>Expires:</strong> ${request.expires_at || 'N/A'}</p>
+                ${request.fulfilled_at ? `<p><strong>Fulfilled:</strong> ${request.fulfilled_at}</p>` : ''}
+                ${request.required_by_date ? `<p><strong>Required By:</strong> ${request.required_by_date}</p>` : ''}
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Notified Donors:</strong> ${request.notified_donors}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Accepted Donors:</strong> ${request.accepted_donors}</p>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-12">
+                <p><strong>Location Coordinates:</strong> ${request.requester_latitude || 'N/A'}, ${request.requester_longitude || 'N/A'} (Radius: ${request.search_radius || 'N/A'} km)</p>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('requestDetails').innerHTML = details;
+    new bootstrap.Modal(document.getElementById('viewRequestModal')).show();
+}
+
+// Mark request as fulfilled
+function markFulfilled(requestId) {
+    if (confirm('Mark this request as fulfilled?')) {
+        fetch(`/admin/requests/fulfill/${requestId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert('Error marking request as fulfilled');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error marking request as fulfilled');
+        });
+    }
+}
+
+// Cancel request
+function cancelRequest(requestId) {
+    if (confirm('Cancel this request?')) {
+        fetch(`/admin/requests/cancel/${requestId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert('Error cancelling request');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error cancelling request');
+        });
+    }
+}
+
+// Export requests
+function exportRequests() {
+    window.location.href = '/admin/export/requests';
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', function() {
+    // Update request count
+    document.getElementById('requestCount').textContent = requestsData.length;
+});
+</script>
+{% endblock %}

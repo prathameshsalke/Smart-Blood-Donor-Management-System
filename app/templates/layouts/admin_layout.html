@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="admin-wrapper">
+    <!-- Sidebar -->
+    <nav class="admin-sidebar">
+        <div class="sidebar-header">
+            <h4>
+                <i class="fas fa-tint me-2"></i>Admin Panel
+            </h4>
+        </div>
+        
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" 
+                   href="{{ url_for('admin.dashboard') }}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin.manage_donors' %}active{% endif %}" 
+                   href="{{ url_for('admin.manage_donors') }}">
+                    <i class="fas fa-users"></i> Manage Donors
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin.manage_requests' %}active{% endif %}" 
+                   href="{{ url_for('admin.manage_requests') }}">
+                    <i class="fas fa-tint"></i> Blood Requests
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin.manage_hospitals' %}active{% endif %}" 
+                   href="{{ url_for('admin.manage_hospitals') }}">
+                    <i class="fas fa-hospital"></i> Hospitals
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin.map_dashboard' %}active{% endif %}" 
+                   href="{{ url_for('admin.map_dashboard') }}">
+                    <i class="fas fa-map-marked-alt"></i> Map Dashboard
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin.demand_forecast' %}active{% endif %}" 
+                   href="{{ url_for('admin.demand_forecast') }}">
+                    <i class="fas fa-chart-line"></i> Demand Forecast
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin.activity_logs' %}active{% endif %}" 
+                   href="{{ url_for('admin.activity_logs') }}">
+                    <i class="fas fa-history"></i> Activity Logs
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin.export_reports' %}active{% endif %}" 
+                   href="{{ url_for('admin.export_reports') }}">
+                    <i class="fas fa-download"></i> Export Reports
+                </a>
+            </li>
+            
+            <li class="nav-item mt-3">
+                <hr class="bg-secondary">
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('index') }}">
+                    <i class="fas fa-home"></i> Back to Site
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </li>
+        </ul>
+        
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <i class="fas fa-user-circle fa-2x mb-2"></i>
+                <p class="mb-0">{{ current_user.name }}</p>
+                <small class="text-muted">{{ current_user.email }}</small>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        {% block content %}{% endblock %}
+    </main>
+</div>
+
+<style>
+.admin-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+.admin-sidebar {
+    width: 250px;
+    background: linear-gradient(180deg, #343a40 0%, #212529 100%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 100;
+    overflow-y: auto;
+}
+
+.admin-sidebar .sidebar-header {
+    padding: 1.5rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.admin-sidebar .nav {
+    flex: 1;
+    padding: 1rem 0;
+}
+
+.admin-sidebar .nav-link {
+    color: rgba(255,255,255,0.75);
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s;
+}
+
+.admin-sidebar .nav-link:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.1);
+    padding-left: 2rem;
+}
+
+.admin-sidebar .nav-link.active {
+    color: #fff;
+    background: #dc3545;
+}
+
+.admin-sidebar .nav-link i {
+    width: 1.5rem;
+    font-size: 1.1rem;
+}
+
+.admin-sidebar .sidebar-footer {
+    padding: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    text-align: center;
+}
+
+.admin-main {
+    flex: 1;
+    margin-left: 250px;
+    padding: 2rem;
+    background: #f8f9fa;
+    min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+    .admin-sidebar {
+        width: 0;
+        visibility: hidden;
+    }
+    
+    .admin-main {
+        margin-left: 0;
+    }
+}
+</style>
+{% endblock %}

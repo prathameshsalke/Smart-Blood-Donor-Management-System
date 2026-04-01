@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Login - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg border-0 rounded-lg mt-5">
+                <div class="card-header bg-danger text-white text-center py-4">
+                    <h3 class="mb-0">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('auth.login') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope text-danger me-1"></i>Email Address
+                            </label>
+                            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), 
+                                         placeholder="Enter your email", id="email") }}
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.email.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock text-danger me-1"></i>Password
+                            </label>
+                            {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), 
+                                            placeholder="Enter your password", id="password") }}
+                            {% if form.password.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.password.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            {{ form.remember(class="form-check-input", id="remember") }}
+                            <label class="form-check-label" for="remember">
+                                Remember me
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>Login
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="text-center">
+                        <p class="mb-2">
+                            <a href="{{ url_for('auth.forgot_password') }}" class="text-danger">
+                                <i class="fas fa-key me-1"></i>Forgot Password?
+                            </a>
+                        </p>
+                        <p class="mb-0">
+                            Don't have an account? 
+                            <a href="{{ url_for('auth.register') }}" class="text-danger fw-bold">
+                                Register here
+                            </a>
+                        </p>
+                    </div>
+                </div>
+                <div class="card-footer bg-light text-center py-3">
+                    <small class="text-muted">
+                        <i class="fas fa-shield-alt me-1"></i>Your information is secure
+                    </small>
+                </div>
+            </div>
+            
+            <!-- Demo Credentials -->
+            <div class="card mt-3 border-info">
+                <div class="card-body bg-info bg-opacity-10">
+                    <h6 class="card-title text-info">
+                        <i class="fas fa-info-circle me-1"></i>Demo Credentials
+                    </h6>
+                    <div class="row small">
+                        <div class="col-6">
+                            <strong>Admin:</strong><br>
+                            Email: admin@blooddonor.com<br>
+                            Password: Admin@123
+                        </div>
+                        <div class="col-6">
+                            <strong>Donor:</strong><br>
+                            Email: donor@example.com<br>
+                            Password: Donor@123
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    border-radius: 15px;
+}
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+}
+.form-control:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+.btn-danger {
+    background: linear-gradient(45deg, #dc3545, #c82333);
+    border: none;
+    transition: transform 0.3s;
+}
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,488 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block title %}Map Dashboard - Admin{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<style>
+    #adminMap {
+        height: 600px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    .stats-panel {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        max-width: 300px;
+    }
+    .legend {
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+    }
+    .legend i {
+        width: 18px;
+        height: 18px;
+        float: left;
+        margin-right: 8px;
+        opacity: 0.7;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">
+        <i class="fas fa-map-marked-alt me-2"></i>Map Dashboard
+    </h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Map Dashboard</li>
+    </ol>
+
+    <!-- Map Container -->
+    <div class="position-relative">
+        <div id="adminMap"></div>
+        
+        <!-- Stats Panel -->
+        <div class="stats-panel">
+            <h6 class="mb-3">Map Statistics</h6>
+            <div class="mb-2">
+                <span class="badge bg-danger me-2">{{ donors|length }}</span>
+                <span>Donors on Map</span>
+            </div>
+            <div class="mb-2">
+                <span class="badge bg-info me-2">{{ hospitals|length }}</span>
+                <span>Hospitals on Map</span>
+            </div>
+            <div class="mb-2">
+                <span class="badge bg-warning me-2" id="emergencyCount">0</span>
+                <span>Emergency Requests</span>
+            </div>
+            <hr>
+            <div class="legend">
+                <div class="mb-1">
+                    <i class="fas fa-circle text-danger"></i> Donors
+                </div>
+                <div class="mb-1">
+                    <i class="fas fa-circle text-info"></i> Hospitals
+                </div>
+                <div class="mb-1">
+                    <i class="fas fa-circle text-warning"></i> Emergency Requests
+                </div>
+                <div>
+                    <i class="fas fa-circle text-success"></i> Verified Hospitals
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <i class="fas fa-layer-group me-1"></i>Map Layers
+                </div>
+                <div class="card-body">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="showDonors" checked>
+                        <label class="form-check-label" for="showDonors">
+                            Show Donors
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="showHospitals" checked>
+                        <label class="form-check-label" for="showHospitals">
+                            Show Hospitals
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="showEmergency" checked>
+                        <label class="form-check-label" for="showEmergency">
+                            Show Emergency Requests
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="showHeatmap">
+                        <label class="form-check-label" for="showHeatmap">
+                            Show Heatmap
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <i class="fas fa-filter me-1"></i>Filters
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Blood Type</label>
+                        <select class="form-select" id="mapBloodType">
+                            <option value="">All Blood Types</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Donor Status</label>
+                        <select class="form-select" id="donorStatus">
+                            <option value="">All Donors</option>
+                            <option value="eligible">Eligible Only</option>
+                            <option value="available">Available Only</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <i class="fas fa-chart-pie me-1"></i>Quick Stats
+                </div>
+                <div class="card-body">
+                    <canvas id="mapStatsChart" width="100%" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <i class="fas fa-download me-1"></i>Export
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-outline-danger w-100 mb-2" onclick="exportMapImage()">
+                        <i class="fas fa-camera me-2"></i>Export as Image
+                    </button>
+                    <button class="btn btn-outline-danger w-100" onclick="exportMapData()">
+                        <i class="fas fa-download me-2"></i>Export Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nearby Analysis -->
+    <div class="card mt-4">
+        <div class="card-header bg-white">
+            <i class="fas fa-analytics me-1"></i>Coverage Analysis
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Donor Density by City</h6>
+                    <canvas id="cityChart" width="100%" height="300"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <h6>Coverage Radius Analysis</h6>
+                    <canvas id="radiusChart" width="100%" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let map;
+let donorMarkers = [];
+let hospitalMarkers = [];
+let emergencyMarkers = [];
+let heatLayer;
+
+// Initialize map
+function initMap() {
+    map = L.map('adminMap').setView([20.5937, 78.9629], 5);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Load data
+    loadDonors();
+    loadHospitals();
+    loadEmergencyRequests();
+    
+    // Setup layer controls
+    setupLayerControls();
+}
+
+// Load donors
+function loadDonors() {
+    const donors = {{ donors|tojson|safe }};
+    const bloodType = document.getElementById('mapBloodType').value;
+    const donorStatus = document.getElementById('donorStatus').value;
+    
+    // Clear existing markers
+    donorMarkers.forEach(marker => map.removeLayer(marker));
+    donorMarkers = [];
+    
+    donors.forEach(donor => {
+        if (!donor.latitude || !donor.longitude) return;
+        
+        // Apply filters
+        if (bloodType && donor.blood_type !== bloodType) return;
+        if (donorStatus === 'eligible' && !donor.is_eligible) return;
+        if (donorStatus === 'available' && !donor.is_available) return;
+        
+        const marker = L.circleMarker([donor.latitude, donor.longitude], {
+            radius: 8,
+            fillColor: donor.is_eligible ? '#dc3545' : '#6c757d',
+            color: '#fff',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+        }).addTo(map);
+        
+        marker.bindPopup(`
+            <b>${donor.user.name}</b><br>
+            Blood Type: ${donor.blood_type}<br>
+            Phone: ${donor.user.phone}<br>
+            City: ${donor.city}<br>
+            Status: ${donor.is_eligible ? 'Eligible' : 'Not Eligible'}<br>
+            <a href="/admin/donors/${donor.id}" class="btn btn-sm btn-danger mt-2">View Details</a>
+        `);
+        
+        donorMarkers.push(marker);
+    });
+    
+    updateEmergencyCount();
+}
+
+// Load hospitals
+function loadHospitals() {
+    const hospitals = {{ hospitals|tojson|safe }};
+    
+    hospitalMarkers.forEach(marker => map.removeLayer(marker));
+    hospitalMarkers = [];
+    
+    hospitals.forEach(hospital => {
+        if (!hospital.latitude || !hospital.longitude) return;
+        
+        const marker = L.marker([hospital.latitude, hospital.longitude], {
+            icon: L.divIcon({
+                className: 'hospital-marker',
+                html: '<i class="fas fa-hospital" style="color: #17a2b8; font-size: 20px;"></i>',
+                iconSize: [20, 20]
+            })
+        }).addTo(map);
+        
+        marker.bindPopup(`
+            <b>${hospital.name}</b><br>
+            Phone: ${hospital.phone}<br>
+            Address: ${hospital.address}<br>
+            Blood Bank: ${hospital.has_blood_bank ? 'Yes' : 'No'}<br>
+            <a href="/admin/hospitals/${hospital.id}" class="btn btn-sm btn-info mt-2">View Details</a>
+        `);
+        
+        hospitalMarkers.push(marker);
+    });
+}
+
+// Load emergency requests
+function loadEmergencyRequests() {
+    fetch('/api/requests/emergency/active')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                displayEmergencyMarkers(data.requests);
+            }
+        })
+        .catch(error => console.error('Error loading emergencies:', error));
+}
+
+function displayEmergencyMarkers(requests) {
+    emergencyMarkers.forEach(marker => map.removeLayer(marker));
+    emergencyMarkers = [];
+    
+    requests.forEach(request => {
+        if (!request.latitude || !request.longitude) return;
+        
+        const marker = L.marker([request.latitude, request.longitude], {
+            icon: L.divIcon({
+                className: 'emergency-marker',
+                html: '<i class="fas fa-exclamation-triangle" style="color: #dc3545; font-size: 20px;"></i>',
+                iconSize: [20, 20]
+            })
+        }).addTo(map);
+        
+        marker.bindPopup(`
+            <b>Emergency Request</b><br>
+            Blood Type: ${request.blood_type_needed}<br>
+            Patient: ${request.patient_name}<br>
+            Contact: ${request.requester_phone}<br>
+            <a href="/admin/requests/${request.id}" class="btn btn-sm btn-danger mt-2">View Details</a>
+        `);
+        
+        emergencyMarkers.push(marker);
+    });
+    
+    document.getElementById('emergencyCount').textContent = requests.length;
+}
+
+// Setup layer controls
+function setupLayerControls() {
+    document.getElementById('showDonors').addEventListener('change', function(e) {
+        donorMarkers.forEach(marker => {
+            if (e.target.checked) {
+                marker.addTo(map);
+            } else {
+                map.removeLayer(marker);
+            }
+        });
+    });
+    
+    document.getElementById('showHospitals').addEventListener('change', function(e) {
+        hospitalMarkers.forEach(marker => {
+            if (e.target.checked) {
+                marker.addTo(map);
+            } else {
+                map.removeLayer(marker);
+            }
+        });
+    });
+    
+    document.getElementById('showEmergency').addEventListener('change', function(e) {
+        emergencyMarkers.forEach(marker => {
+            if (e.target.checked) {
+                marker.addTo(map);
+            } else {
+                map.removeLayer(marker);
+            }
+        });
+    });
+    
+    document.getElementById('showHeatmap').addEventListener('change', function(e) {
+        if (e.target.checked) {
+            const heatData = donorMarkers.map(marker => {
+                const latLng = marker.getLatLng();
+                return [latLng.lat, latLng.lng, 1];
+            });
+            heatLayer = L.heatLayer(heatData, {
+                radius: 25,
+                blur: 15,
+                maxZoom: 10
+            }).addTo(map);
+        } else if (heatLayer) {
+            map.removeLayer(heatLayer);
+        }
+    });
+    
+    document.getElementById('mapBloodType').addEventListener('change', loadDonors);
+    document.getElementById('donorStatus').addEventListener('change', loadDonors);
+}
+
+// Update emergency count
+function updateEmergencyCount() {
+    setInterval(() => {
+        loadEmergencyRequests();
+    }, 30000); // Refresh every 30 seconds
+}
+
+// Export functions
+function exportMapImage() {
+    // This would require additional libraries like leaflet-image
+    alert('Map export functionality would be implemented here');
+}
+
+function exportMapData() {
+    const data = {
+        donors: {{ donors|tojson|safe }},
+        hospitals: {{ hospitals|tojson|safe }}
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'map_data.json';
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+// Initialize charts
+function initCharts() {
+    // City distribution chart
+    const cityCtx = document.getElementById('cityChart').getContext('2d');
+    const cityData = {};
+    {{ donors|tojson|safe }}.forEach(donor => {
+        if (donor.city) {
+            cityData[donor.city] = (cityData[donor.city] || 0) + 1;
+        }
+    });
+    
+    new Chart(cityCtx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(cityData).slice(0, 10),
+            datasets: [{
+                label: 'Donors by City',
+                data: Object.values(cityData).slice(0, 10),
+                backgroundColor: '#dc3545'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+    
+    // Radius analysis chart
+    const radiusCtx = document.getElementById('radiusChart').getContext('2d');
+    const radii = [5, 10, 20, 50, 100];
+    const radiusCounts = radii.map(r => {
+        return {{ donors|tojson|safe }}.filter(d => d.distance_km && d.distance_km <= r).length;
+    });
+    
+    new Chart(radiusCtx, {
+        type: 'line',
+        data: {
+            labels: radii.map(r => r + ' km'),
+            datasets: [{
+                label: 'Donors within radius',
+                data: radiusCounts,
+                borderColor: '#17a2b8',
+                backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+}
+
+// Initialize everything
+document.addEventListener('DOMContentLoaded', () => {
+    initMap();
+    initCharts();
+});
+</script>
+{% endblock %}

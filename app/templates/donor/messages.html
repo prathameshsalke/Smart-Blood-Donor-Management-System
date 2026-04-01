@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Messages - {{ super() }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .message-card {
+        transition: all 0.3s;
+        border-left: 4px solid transparent;
+        cursor: pointer;
+        margin-bottom: 10px;
+    }
+    .message-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .message-card.unread {
+        border-left-color: #dc3545;
+        background-color: #fff5f5;
+    }
+    .message-card.unread .message-subject {
+        font-weight: 600;
+    }
+    .message-card.read {
+        border-left-color: #6c757d;
+        opacity: 0.9;
+    }
+    .message-type-badge {
+        font-size: 0.75rem;
+        padding: 3px 8px;
+        border-radius: 12px;
+    }
+    .message-type-badge.certificate {
+        background: #28a745;
+        color: white;
+    }
+    .message-type-badge.request {
+        background: #dc3545;
+        color: white;
+    }
+    .message-type-badge.notification {
+        background: #17a2b8;
+        color: white;
+    }
+    .message-type-badge.system {
+        background: #6c757d;
+        color: white;
+    }
+    .filter-btn {
+        border-radius: 20px;
+        padding: 5px 15px;
+        margin: 0 5px 10px 0;
+        transition: all 0.3s;
+    }
+    .filter-btn.active {
+        background: #dc3545;
+        color: white;
+        border-color: #dc3545;
+    }
+    .filter-btn:hover {
+        transform: translateY(-2px);
+    }
+    .notification-badge {
+        position: relative;
+        top: -8px;
+        right: -5px;
+        font-size: 0.7rem;
+        padding: 3px 6px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-envelope text-danger me-2"></i>
+                    Messages
+                    {% if unread_count > 0 %}
+                        <span class="badge bg-danger notification-badge">{{ unread_count }}</span>
+                    {% endif %}
+                </h2>
+                <div>
+                    <button class="btn btn-outline-danger btn-sm me-2" onclick="markAllRead()">
+                        <i class="fas fa-check-double me-1"></i>Mark All Read
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filter Buttons -->
+            <div class="mb-4">
+                <a href="{{ url_for('donor.messages') }}" 
+                   class="btn btn-outline-secondary filter-btn {% if not current_type %}active{% endif %}">
+                    <i class="fas fa-inbox me-1"></i>All
+                </a>
+                <a href="{{ url_for('donor.messages', type='notification') }}" 
+                   class="btn btn-outline-secondary filter-btn {% if current_type == 'notification' %}active{% endif %}">
+                    <i class="fas fa-bell me-1"></i>Notifications
+                </a>
+                <a href="{{ url_for('donor.messages', type='certificate') }}" 
+                   class="btn btn-outline-secondary filter-btn {% if current_type == 'certificate' %}active{% endif %}">
+                    <i class="fas fa-certificate me-1"></i>Certificates
+                </a>
+                <a href="{{ url_for('donor.messages', type='request') }}" 
+                   class="btn btn-outline-secondary filter-btn {% if current_type == 'request' %}active{% endif %}">
+                    <i class="fas fa-tint me-1"></i>Requests
+                </a>
+            </div>
+
+            <!-- Messages List -->
+            {% if messages %}
+                <div class="list-group">
+                    {% for message in messages %}
+                        <div class="card message-card {% if not message.is_read %}unread{% else %}read{% endif %} mb-2"
+                             onclick="window.location.href='{{ url_for('donor.view_message', message_id=message.message_id) }}'">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="message-type-badge {{ message.message_type }} me-2">
+                                                {% if message.message_type == 'certificate' %}
+                                                    <i class="fas fa-certificate me-1"></i>Certificate
+                                                {% elif message.message_type == 'request' %}
+                                                    <i class="fas fa-tint me-1"></i>Request
+                                                {% elif message.message_type == 'notification' %}
+                                                    <i class="fas fa-bell me-1"></i>Notification
+                                                {% else %}
+                                                    <i class="fas fa-info-circle me-1"></i>System
+                                                {% endif %}
+                                            </span>
+                                            {% if not message.is_read %}
+                                                <span class="badge bg-danger">New</span>
+                                            {% endif %}
+                                        </div>
+                                        <h5 class="message-subject mb-1">{{ message.subject }}</h5>
+                                        <p class="text-muted small mb-2">
+                                            {{ message.content|truncate(150) }}
+                                        </p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock me-1"></i>
+                                                {{ message.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                            </small>
+                                            <div>
+                                                {% if message.related_donation_id %}
+                                                    <span class="badge bg-info me-1">
+                                                        Donation: {{ message.related_donation_id }}
+                                                    </span>
+                                                {% endif %}
+                                                {% if message.related_request_id %}
+                                                    <span class="badge bg-warning me-1">
+                                                        Request: {{ message.related_request_id }}
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-secondary ms-2" 
+                                            onclick="event.stopPropagation(); archiveMessage('{{ message.message_id }}')">
+                                        <i class="fas fa-archive"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if pagination.pages > 1 %}
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('donor.messages', page=pagination.prev_num, type=current_type) }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        
+                        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                            {% if page_num %}
+                                <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('donor.messages', page=page_num, type=current_type) }}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('donor.messages', page=pagination.next_num, type=current_type) }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                {% endif %}
+
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                    <h5>No Messages</h5>
+                    <p class="text-muted">You don't have any messages in this folder.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function markAllRead() {
+    fetch('/donor/messages/mark-all-read', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            location.reload();
+        }
+    });
+}
+
+function archiveMessage(messageId) {
+    if (confirm('Archive this message?')) {
+        fetch(`/donor/messages/archive/${messageId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            }
+        });
+    }
+}
+
+// Update notification count periodically
+function updateNotificationCount() {
+    fetch('/donor/notifications/count')
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.querySelector('.notification-badge');
+            if (data.count > 0) {
+                if (badge) {
+                    badge.textContent = data.count;
+                } else {
+                    const newBadge = document.createElement('span');
+                    newBadge.className = 'badge bg-danger notification-badge';
+                    newBadge.textContent = data.count;
+                    document.querySelector('h2').appendChild(newBadge);
+                }
+            } else if (badge) {
+                badge.remove();
+            }
+        });
+}
+
+// Update every 30 seconds
+setInterval(updateNotificationCount, 30000);
+</script>
+{% endblock %}

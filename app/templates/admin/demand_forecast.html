@@ -1,0 +1,369 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block title %}Demand Forecast - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">
+        <i class="fas fa-chart-line me-2"></i>Blood Demand Forecast
+    </h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Demand Forecast</li>
+    </ol>
+
+    <!-- Controls -->
+    <div class="card mb-4">
+        <div class="card-header bg-white">
+            <i class="fas fa-sliders-h me-1"></i>
+            Forecast Parameters
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Blood Type</label>
+                    <select class="form-select" id="bloodType">
+                        <option value="all">All Blood Types</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Forecast Months</label>
+                    <input type="number" class="form-control" id="months" min="1" max="12" value="3">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-danger w-100" onclick="generateForecast()">
+                        <i class="fas fa-sync-alt me-2"></i>Generate Forecast
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forecast Chart -->
+    <div class="card mb-4">
+        <div class="card-header bg-white">
+            <i class="fas fa-chart-bar me-1"></i>
+            Forecast Visualization
+        </div>
+        <div class="card-body">
+            <canvas id="forecastChart" width="100%" height="50"></canvas>
+        </div>
+    </div>
+
+    <!-- Forecast Table -->
+    <div class="card mb-4">
+        <div class="card-header bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-table me-1"></i>
+                    Forecast Details
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="exportForecast()">
+                        <i class="fas fa-download me-1"></i>Export
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="forecastTable">
+                    <thead class="table-danger">
+                        <tr>
+                            <th>Month</th>
+                            <th>Blood Type</th>
+                            <th>Predicted Demand</th>
+                            <th>Confidence</th>
+                            <th>Recommended Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for forecast in forecasts %}
+                        <tr>
+                            <td>{{ forecast.month }}</td>
+                            <td>
+                                <span class="badge bg-danger">{{ forecast.blood_type }}</span>
+                            </td>
+                            <td class="fw-bold">{{ forecast.predicted_demand }} units</td>
+                            <td>
+                                {% if forecast.confidence == 'high' %}
+                                    <span class="badge bg-success">High</span>
+                                {% elif forecast.confidence == 'medium' %}
+                                    <span class="badge bg-warning">Medium</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Low</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ (forecast.predicted_demand * 1.2)|int }} units</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4">
+                                <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No forecast data available</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Insights -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <i class="fas fa-lightbulb text-warning me-1"></i>
+                    Key Insights
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Highest Demand Month
+                            <span class="badge bg-danger rounded-pill">December</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Most Needed Blood Type
+                            <span class="badge bg-danger rounded-pill">O+</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Projected Increase
+                            <span class="badge bg-success rounded-pill">+15%</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Critical Shortage Risk
+                            <span class="badge bg-warning rounded-pill">Medium</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <i class="fas fa-exclamation-triangle text-danger me-1"></i>
+                    Recommendations
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-bell me-2"></i>
+                        <strong>Urgent:</strong> Increase O+ blood drives in December
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-clock me-2"></i>
+                        <strong>Upcoming:</strong> Schedule A- donations for next month
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Stable:</strong> AB- supply is adequate
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let forecastChart;
+
+function generateForecast() {
+    const bloodType = document.getElementById('bloodType').value;
+    const months = document.getElementById('months').value;
+    
+    fetch(`/api/forecast/demand?blood_type=${bloodType}&months=${months}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                updateForecastTable(data.forecast);
+                updateForecastChart(data.forecast);
+            } else {
+                alert('Failed to generate forecast');
+            }
+        })
+        .catch(error => {
+            console.error('Forecast error:', error);
+            alert('Error generating forecast');
+        });
+}
+
+function updateForecastTable(forecasts) {
+    const tbody = document.querySelector('#forecastTable tbody');
+    if (!tbody) return;
+    
+    if (forecasts.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center py-4">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No forecast data available</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    let html = '';
+    forecasts.forEach(f => {
+        const confidenceClass = {
+            'high': 'success',
+            'medium': 'warning',
+            'low': 'secondary'
+        }[f.confidence] || 'secondary';
+        
+        html += `
+            <tr>
+                <td>${f.month}</td>
+                <td><span class="badge bg-danger">${f.blood_type}</span></td>
+                <td class="fw-bold">${f.predicted_demand} units</td>
+                <td><span class="badge bg-${confidenceClass}">${f.confidence}</span></td>
+                <td>${Math.round(f.predicted_demand * 1.2)} units</td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = html;
+}
+
+function updateForecastChart(forecasts) {
+    const ctx = document.getElementById('forecastChart').getContext('2d');
+    
+    if (forecastChart) {
+        forecastChart.destroy();
+    }
+    
+    const months = forecasts.map(f => f.month);
+    const demand = forecasts.map(f => f.predicted_demand);
+    const bloodTypes = [...new Set(forecasts.map(f => f.blood_type))];
+    
+    if (bloodTypes.length === 1) {
+        // Single blood type forecast
+        forecastChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: `Demand - ${bloodTypes[0]}`,
+                    data: demand,
+                    borderColor: '#dc3545',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Units'
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        // Multiple blood types - stacked bar
+        const groupedData = {};
+        forecasts.forEach(f => {
+            if (!groupedData[f.month]) {
+                groupedData[f.month] = {};
+            }
+            groupedData[f.month][f.blood_type] = f.predicted_demand;
+        });
+        
+        const datasets = bloodTypes.map((bt, index) => ({
+            label: bt,
+            data: months.map(m => groupedData[m]?.[bt] || 0),
+            backgroundColor: `hsl(${index * 45}, 70%, 50%)`,
+            stack: 'stack'
+        }));
+        
+        forecastChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Units'
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function exportForecast() {
+    const rows = [];
+    document.querySelectorAll('#forecastTable tbody tr').forEach(tr => {
+        const row = [];
+        tr.querySelectorAll('td').forEach(td => {
+            row.push(td.innerText);
+        });
+        if (row.length > 0) rows.push(row);
+    });
+    
+    let csv = 'Month,Blood Type,Predicted Demand,Confidence,Recommended Stock\n';
+    rows.forEach(row => {
+        csv += row.join(',') + '\n';
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `demand_forecast_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+// Generate initial forecast
+document.addEventListener('DOMContentLoaded', () => {
+    generateForecast();
+});
+</script>
+{% endblock %}

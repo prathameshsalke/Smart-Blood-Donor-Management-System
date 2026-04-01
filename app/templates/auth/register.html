@@ -1,0 +1,461 @@
+{% extends "base.html" %}
+
+{% block title %}Register - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0 rounded-lg mt-4 mb-5">
+                <div class="card-header bg-danger text-white text-center py-3">
+                    <h3 class="mb-0">
+                        <i class="fas fa-user-plus me-2"></i>Become a Blood Donor
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('auth.register') }}" id="registerForm" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Profile Photo Upload - NEW SECTION -->
+                        <h5 class="text-danger mb-3">
+                            <i class="fas fa-camera me-2"></i>Profile Photo (Optional)
+                        </h5>
+                        <div class="row mb-4">
+                            <div class="col-md-12 text-center">
+                                <div class="profile-upload-container">
+                                    <div class="profile-preview mb-3">
+                                        <img src="{{ url_for('static', filename='images/default-avatar.png') }}" 
+                                             id="profilePreview" 
+                                             class="rounded-circle img-fluid" 
+                                             style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #dc3545; padding: 3px;">
+                                    </div>
+                                    
+                                    <div class="upload-buttons">
+                                        <label for="profile_photo" class="btn btn-outline-danger">
+                                            <i class="fas fa-upload me-2"></i>Choose Photo
+                                        </label>
+                                        <button type="button" class="btn btn-outline-info" onclick="triggerCamera()">
+                                            <i class="fas fa-camera me-2"></i>Take Photo
+                                        </button>
+                                    </div>
+                                    
+                                    {{ form.profile_photo(class="d-none", id="profile_photo", accept="image/*") }}
+                                    
+                                    <div id="uploadHelp" class="form-text text-muted mt-2">
+                                        Max file size: 5MB. Allowed: JPG, PNG, GIF
+                                    </div>
+                                    
+                                    <!-- Hidden camera input for mobile -->
+                                    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Account Information -->
+                        <h5 class="text-danger mb-3">
+                            <i class="fas fa-user-circle me-2"></i>Account Information
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Full Name *</label>
+                                {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), 
+                                            placeholder="Enter your full name") }}
+                                {% if form.name.errors %}
+                                    <div class="invalid-feedback">{{ form.name.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email Address *</label>
+                                {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), 
+                                            placeholder="Enter your email") }}
+                                {% if form.email.errors %}
+                                    <div class="invalid-feedback">{{ form.email.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">Phone Number *</label>
+                                {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else ""), 
+                                            placeholder="10 digit mobile number") }}
+                                {% if form.phone.errors %}
+                                    <div class="invalid-feedback">{{ form.phone.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="blood_type" class="form-label">Blood Group *</label>
+                                {{ form.blood_type(class="form-select" + (" is-invalid" if form.blood_type.errors else "")) }}
+                                {% if form.blood_type.errors %}
+                                    <div class="invalid-feedback">{{ form.blood_type.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="password" class="form-label">Password *</label>
+                                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), 
+                                                placeholder="Minimum 6 characters") }}
+                                {% if form.password.errors %}
+                                    <div class="invalid-feedback">{{ form.password.errors[0] }}</div>
+                                {% endif %}
+                                <small class="text-muted">At least 6 characters with letters and numbers</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="confirm_password" class="form-label">Confirm Password *</label>
+                                {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), 
+                                                        placeholder="Re-enter password") }}
+                                {% if form.confirm_password.errors %}
+                                    <div class="invalid-feedback">{{ form.confirm_password.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Personal Information -->
+                        <h5 class="text-danger mb-3 mt-4">
+                            <i class="fas fa-id-card me-2"></i>Personal Information
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="date_of_birth" class="form-label">Date of Birth *</label>
+                                {{ form.date_of_birth(class="form-control" + (" is-invalid" if form.date_of_birth.errors else ""), 
+                                                     type="date") }}
+                                {% if form.date_of_birth.errors %}
+                                    <div class="invalid-feedback">{{ form.date_of_birth.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="gender" class="form-label">Gender *</label>
+                                {{ form.gender(class="form-select" + (" is-invalid" if form.gender.errors else "")) }}
+                                {% if form.gender.errors %}
+                                    <div class="invalid-feedback">{{ form.gender.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="weight" class="form-label">Weight (kg) *</label>
+                                {{ form.weight(class="form-control" + (" is-invalid" if form.weight.errors else ""), 
+                                              placeholder="Minimum 45 kg", type="number", step="0.1") }}
+                                {% if form.weight.errors %}
+                                    <div class="invalid-feedback">{{ form.weight.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Nationality and Disability -->
+                        <h5 class="text-danger mb-3 mt-4">
+                            <i class="fas fa-globe me-2"></i>Additional Information
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="nationality" class="form-label">Nationality *</label>
+                                {{ form.nationality(class="form-select" + (" is-invalid" if form.nationality.errors else "")) }}
+                                {% if form.nationality.errors %}
+                                    <div class="invalid-feedback">{{ form.nationality.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check mt-4">
+                                    {{ form.has_disability(class="form-check-input", id="has_disability") }}
+                                    <label class="form-check-label" for="has_disability">
+                                        I have a disability
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="disabilitySection" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="disability" class="form-label">Disability Description</label>
+                                    {{ form.disability(class="form-control", rows="2", placeholder="Please describe your disability") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Previous Donation History -->
+                        <h5 class="text-danger mb-3 mt-4">
+                            <i class="fas fa-history me-2"></i>Previous Donation History (Optional)
+                        </h5>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            If you have donated blood before, please provide details below. This helps us calculate your eligibility correctly.
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Have you donated blood before?</label>
+                                {{ form.has_previous_donations(class="form-select", id="has_previous_donations") }}
+                            </div>
+                        </div>
+                        
+                        <div id="previousDonationsSection" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="last_donation_date" class="form-label">Last Donation Date</label>
+                                    {{ form.last_donation_date(class="form-control", type="date") }}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="total_previous_donations" class="form-label">Total Previous Donations</label>
+                                    {{ form.total_previous_donations(class="form-control", type="number", min="0") }}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="last_donation_location" class="form-label">Last Donation Location</label>
+                                    {{ form.last_donation_location(class="form-control", placeholder="Hospital or Blood Bank name") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Address Information -->
+                        <h5 class="text-danger mb-3 mt-4">
+                            <i class="fas fa-map-marker-alt me-2"></i>Address Information
+                        </h5>
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address *</label>
+                            {{ form.address(class="form-control" + (" is-invalid" if form.address.errors else ""), 
+                                           placeholder="Street address") }}
+                            {% if form.address.errors %}
+                                <div class="invalid-feedback">{{ form.address.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="city" class="form-label">City *</label>
+                                {{ form.city(class="form-control" + (" is-invalid" if form.city.errors else ""), 
+                                            placeholder="City") }}
+                                {% if form.city.errors %}
+                                    <div class="invalid-feedback">{{ form.city.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="state" class="form-label">State *</label>
+                                {{ form.state(class="form-control" + (" is-invalid" if form.state.errors else ""), 
+                                             placeholder="State") }}
+                                {% if form.state.errors %}
+                                    <div class="invalid-feedback">{{ form.state.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="pincode" class="form-label">Pincode *</label>
+                                {{ form.pincode(class="form-control" + (" is-invalid" if form.pincode.errors else ""), 
+                                               placeholder="6 digit pincode") }}
+                                {% if form.pincode.errors %}
+                                    <div class="invalid-feedback">{{ form.pincode.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Emergency Contact -->
+                        <h5 class="text-danger mb-3 mt-4">
+                            <i class="fas fa-phone-alt me-2"></i>Emergency Contact
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="emergency_contact_name" class="form-label">Contact Name *</label>
+                                {{ form.emergency_contact_name(class="form-control" + (" is-invalid" if form.emergency_contact_name.errors else ""), 
+                                                              placeholder="Full name") }}
+                                {% if form.emergency_contact_name.errors %}
+                                    <div class="invalid-feedback">{{ form.emergency_contact_name.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="emergency_contact_phone" class="form-label">Contact Phone *</label>
+                                {{ form.emergency_contact_phone(class="form-control" + (" is-invalid" if form.emergency_contact_phone.errors else ""), 
+                                                               placeholder="10 digit mobile") }}
+                                {% if form.emergency_contact_phone.errors %}
+                                    <div class="invalid-feedback">{{ form.emergency_contact_phone.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="emergency_contact_relation" class="form-label">Relationship *</label>
+                                {{ form.emergency_contact_relation(class="form-control" + (" is-invalid" if form.emergency_contact_relation.errors else ""), 
+                                                                  placeholder="e.g., Spouse, Parent") }}
+                                {% if form.emergency_contact_relation.errors %}
+                                    <div class="invalid-feedback">{{ form.emergency_contact_relation.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Terms and Conditions -->
+                        <div class="mb-3 form-check mt-4">
+                            <input type="checkbox" class="form-check-input" id="terms" required>
+                            <label class="form-check-label" for="terms">
+                                I confirm that the information provided is correct and I agree to the 
+                                <a href="#" class="text-danger" data-bs-toggle="modal" data-bs-target="#termsModal">
+                                    terms and conditions
+                                </a> *
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="fas fa-user-plus me-2"></i>Register as Donor
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="text-center">
+                        <p class="mb-0">
+                            Already have an account? 
+                            <a href="{{ url_for('auth.login') }}" class="text-danger fw-bold">
+                                Login here
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Terms and Conditions Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-contract me-2"></i>Terms and Conditions
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Blood Donor Eligibility Criteria</h6>
+                <ul>
+                    <li>You must be between 18 and 65 years old</li>
+                    <li>You must weigh at least 45 kg</li>
+                    <li>You must be in good health at the time of donation</li>
+                    <li>You should not have donated blood in the last 90 days</li>
+                    <li>You should not have any transmissible diseases</li>
+                </ul>
+                
+                <h6 class="mt-3">Donor Responsibilities</h6>
+                <ul>
+                    <li>Provide accurate and truthful information</li>
+                    <li>Inform about any health changes that may affect eligibility</li>
+                    <li>Keep your contact information updated</li>
+                    <li>Respond to emergency requests when possible</li>
+                </ul>
+                
+                <h6 class="mt-3">Privacy Policy</h6>
+                <p>Your personal information will be kept confidential and used only for blood donation purposes. We will not share your information with third parties without your consent.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    border-radius: 15px;
+}
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+.btn-danger {
+    background: linear-gradient(45deg, #dc3545, #c82333);
+    border: none;
+    transition: transform 0.3s;
+}
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+}
+.profile-upload-container {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+.profile-preview {
+    position: relative;
+    display: inline-block;
+}
+#profilePreview {
+    transition: all 0.3s;
+}
+#profilePreview:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(220,53,69,0.3);
+}
+.upload-buttons .btn {
+    margin: 0 5px;
+}
+</style>
+
+<script>
+// Preview uploaded image
+document.getElementById('profile_photo').addEventListener('change', function(e) {
+    if (e.target.files && e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('profilePreview').src = e.target.result;
+        }
+        reader.readAsDataURL(e.target.files[0]);
+    }
+});
+
+// Camera capture for mobile
+function triggerCamera() {
+    const cameraInput = document.getElementById('cameraInput');
+    cameraInput.click();
+}
+
+document.getElementById('cameraInput').addEventListener('change', function(e) {
+    if (e.target.files && e.target.files[0]) {
+        // Copy the file to the main file input
+        const file = e.target.files[0];
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        document.getElementById('profile_photo').files = dataTransfer.files;
+        
+        // Preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('profilePreview').src = e.target.result;
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
+// Show/hide disability section
+document.getElementById('has_disability').addEventListener('change', function(e) {
+    const section = document.getElementById('disabilitySection');
+    section.style.display = e.target.checked ? 'block' : 'none';
+});
+
+// Show/hide previous donations section
+document.getElementById('has_previous_donations').addEventListener('change', function(e) {
+    const section = document.getElementById('previousDonationsSection');
+    section.style.display = e.target.value === 'yes' ? 'block' : 'none';
+});
+
+// Form validation
+document.getElementById('registerForm').addEventListener('submit', function(e) {
+    var password = document.getElementById('password').value;
+    var confirm = document.getElementById('confirm_password').value;
+    
+    if (password !== confirm) {
+        e.preventDefault();
+        alert('Passwords do not match!');
+    }
+});
+</script>
+{% endblock %}

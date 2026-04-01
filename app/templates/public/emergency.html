@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Emergency Request - Smart Blood Donor{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Emergency Blood Request</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-phone-alt me-2"></i>
+                        For immediate emergency, please call: <strong>104</strong> (24/7 Helpline)
+                    </div>
+                    <p class="text-muted">This page is under construction. Please use the emergency helpline for immediate assistance.</p>
+                    <a href="{{ url_for('index') }}" class="btn btn-danger">
+                        <i class="fas fa-home me-2"></i>Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

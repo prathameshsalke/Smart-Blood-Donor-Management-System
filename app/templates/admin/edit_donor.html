@@ -1,0 +1,137 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block title %}Edit Donor - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">
+        <i class="fas fa-user-edit me-2"></i>Edit Donor
+    </h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_donors') }}">Manage Donors</a></li>
+        <li class="breadcrumb-item active">Edit Donor</li>
+    </ol>
+
+    <div class="card mb-4">
+        <div class="card-header bg-white">
+            <i class="fas fa-edit me-1"></i>
+            Donor Information
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-control" name="name" value="{{ user.name }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email" value="{{ user.email }}" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" class="form-control" name="phone" value="{{ user.phone }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Blood Type</label>
+                        <select class="form-select" name="blood_type" required>
+                            <option value="A+" {% if donor.blood_type == 'A+' %}selected{% endif %}>A+</option>
+                            <option value="A-" {% if donor.blood_type == 'A-' %}selected{% endif %}>A-</option>
+                            <option value="B+" {% if donor.blood_type == 'B+' %}selected{% endif %}>B+</option>
+                            <option value="B-" {% if donor.blood_type == 'B-' %}selected{% endif %}>B-</option>
+                            <option value="AB+" {% if donor.blood_type == 'AB+' %}selected{% endif %}>AB+</option>
+                            <option value="AB-" {% if donor.blood_type == 'AB-' %}selected{% endif %}>AB-</option>
+                            <option value="O+" {% if donor.blood_type == 'O+' %}selected{% endif %}>O+</option>
+                            <option value="O-" {% if donor.blood_type == 'O-' %}selected{% endif %}>O-</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Address</label>
+                    <textarea class="form-control" name="address" rows="2">{{ donor.address }}</textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">City</label>
+                        <input type="text" class="form-control" name="city" value="{{ donor.city }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">State</label>
+                        <input type="text" class="form-control" name="state" value="{{ donor.state }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Pincode</label>
+                        <input type="text" class="form-control" name="pincode" value="{{ donor.pincode }}">
+                    </div>
+                </div>
+
+                <h5 class="mt-4">Emergency Contact</h5>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Contact Name</label>
+                        <input type="text" class="form-control" name="emergency_contact_name" 
+                               value="{{ donor.emergency_contact_name }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Contact Phone</label>
+                        <input type="text" class="form-control" name="emergency_contact_phone" 
+                               value="{{ donor.emergency_contact_phone }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Relationship</label>
+                        <input type="text" class="form-control" name="emergency_contact_relation" 
+                               value="{{ donor.emergency_contact_relation }}">
+                    </div>
+                </div>
+
+                <h5 class="mt-4">Medical Information</h5>
+                <div class="mb-3">
+                    <label class="form-label">Medical Conditions</label>
+                    <textarea class="form-control" name="medical_conditions" rows="2">{{ donor.medical_conditions }}</textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Medications</label>
+                    <textarea class="form-control" name="medications" rows="2">{{ donor.medications }}</textarea>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_available" 
+                                   id="is_available" {% if donor.is_available %}checked{% endif %}>
+                            <label class="form-check-label" for="is_available">
+                                Available for Donation
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_eligible" 
+                                   id="is_eligible" {% if donor.is_eligible %}checked{% endif %}>
+                            <label class="form-check-label" for="is_eligible">
+                                Eligible to Donate
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-save me-1"></i>Save Changes
+                    </button>
+                    <a href="{{ url_for('admin.manage_donors') }}" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,135 @@
+{% macro map_component(map_id, height="400px", center_lat=20.5937, center_lon=78.9629, zoom=5) %}
+<div id="{{ map_id }}" style="height: {{ height }}; width: 100%;" class="map-container"></div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+<script>
+function initMap(containerId, centerLat, centerLon, zoom) {
+    const map = L.map(containerId).setView([centerLat, centerLon], zoom);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    return map;
+}
+
+function addMarker(map, lat, lon, title, icon, popupContent) {
+    let marker;
+    
+    if (icon === 'user') {
+        marker = L.marker([lat, lon], {
+            icon: L.divIcon({
+                className: 'user-marker',
+                html: '<div class="user-marker-inner"><i class="fas fa-user"></i></div>',
+                iconSize: [30, 30]
+            })
+        }).addTo(map);
+    } else if (icon === 'donor') {
+        marker = L.marker([lat, lon], {
+            icon: L.divIcon({
+                className: 'donor-marker',
+                html: '<div class="donor-marker-inner"><i class="fas fa-tint"></i></div>',
+                iconSize: [30, 30]
+            })
+        }).addTo(map);
+    } else if (icon === 'hospital') {
+        marker = L.marker([lat, lon], {
+            icon: L.divIcon({
+                className: 'hospital-marker',
+                html: '<div class="hospital-marker-inner"><i class="fas fa-hospital"></i></div>',
+                iconSize: [30, 30]
+            })
+        }).addTo(map);
+    } else {
+        marker = L.marker([lat, lon]).addTo(map);
+    }
+    
+    if (popupContent) {
+        marker.bindPopup(popupContent);
+    }
+    
+    if (title) {
+        marker.bindTooltip(title);
+    }
+    
+    return marker;
+}
+
+function addCircle(map, lat, lon, radius, color, fillColor) {
+    return L.circle([lat, lon], {
+        color: color || '#dc3545',
+        fillColor: fillColor || '#f03',
+        fillOpacity: 0.1,
+        radius: radius * 1000 // Convert km to meters
+    }).addTo(map);
+}
+
+function fitBounds(map, markers) {
+    if (markers.length === 0) return;
+    
+    const bounds = L.latLngBounds();
+    markers.forEach(marker => {
+        bounds.extend(marker.getLatLng());
+    });
+    map.fitBounds(bounds, { padding: [50, 50] });
+}
+</script>
+
+<style>
+.map-container {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.user-marker-inner {
+    background: #dc3545;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.donor-marker-inner {
+    background: #28a745;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.hospital-marker-inner {
+    background: #17a2b8;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.leaflet-popup-content {
+    min-width: 200px;
+}
+
+.leaflet-popup-content .btn {
+    width: 100%;
+    margin-top: 5px;
+}
+</style>
+{% endmacro %}

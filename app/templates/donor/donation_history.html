@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Donation History - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-history text-danger me-2"></i>Donation History
+            </h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <!-- Stats Card -->
+            <div class="card bg-danger text-white shadow">
+                <div class="card-body text-center">
+                    <i class="fas fa-tint fa-3x mb-3"></i>
+                    <h3>{{ donations|length }}</h3>
+                    <p class="mb-0">Total Donations</p>
+                </div>
+            </div>
+
+            <!-- Lifetime Stats -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-body">
+                    <h6 class="card-title border-bottom pb-2">Lifetime Stats</h6>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Total Units:</span>
+                        <strong>{{ donations|sum(attribute='units_donated') }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Lives Saved:</span>
+                        <strong class="text-success">{{ donations|sum(attribute='units_donated') * 3 }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>First Donation:</span>
+                        <strong>
+                            {% if donations %}
+                                {{ donations[-1].donation_date.strftime('%b %Y') }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-body">
+                    <h6 class="card-title border-bottom pb-2">Filter</h6>
+                    <!-- <div class="mb-3">
+                        <label class="form-label">Year</label>
+                        <select class="form-select" id="yearFilter" onchange="filterDonations()">
+                            <option value="all">All Years</option>
+                            {% for year in range(2020, now().year + 1) %}
+                                <option value="{{ year }}">{{ year }}</option>
+                        {% endfor %}
+                        </select>
+                    </div> -->
+                      <!-- Replace lines 55-65 with this -->
+                    <div class="mb-3">
+                    <label class="form-label">Year</label>
+                    <select class="form-select" id="yearFilter" onchange="filterDonations()">
+                    <option value="all">All Years</option>
+                    {% set current_year = now().year %}
+                    {% for year in range(2020, current_year + 1) %}
+                    <option value="{{ year }}">{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="statusFilter" onchange="filterDonations()">
+                            <option value="all">All</option>
+                            <option value="verified">Verified</option>
+                            <option value="pending">Pending</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-outline-danger w-100" onclick="resetFilters()">
+                        <i class="fas fa-redo me-2"></i>Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <!-- Donation Timeline -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    {% if donations %}
+                        <div class="donation-timeline">
+                            {% for donation in donations %}
+                                <div class="donation-item" 
+                                     data-year="{{ donation.donation_date.year }}"
+                                     data-status="{% if donation.is_verified %}verified{% else %}pending{% endif %}">
+                                    <div class="timeline-marker">
+                                        <i class="fas fa-tint"></i>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <div class="card mb-3">
+                                            <div class="card-body">
+                                                <div class="row align-items-center">
+                                                    <div class="col-md-3 text-center">
+                                                        <div class="donation-date">
+                                                            <span class="day">{{ donation.donation_date.strftime('%d') }}</span>
+                                                            <span class="month">{{ donation.donation_date.strftime('%b') }}</span>
+                                                            <span class="year">{{ donation.donation_date.strftime('%Y') }}</span>
+                                                        </div>
+                                                        <span class="badge bg-{{ 'success' if donation.is_verified else 'warning' }} mt-2">
+                                                            {{ 'Verified' if donation.is_verified else 'Pending' }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <h5>Donation #{{ donation.donation_id }}</h5>
+                                                        <p class="mb-1">
+                                                            <i class="fas fa-map-marker-alt text-danger me-1"></i>
+                                                            {{ donation.donation_center or 'Blood Donation Camp' }}
+                                                        </p>
+                                                        <p class="mb-1">
+                                                            <i class="fas fa-tint text-danger me-1"></i>
+                                                            {{ donation.units_donated }} unit(s) - {{ donation.donor_blood_type }}
+                                                        </p>
+                                                        {% if donation.blood_pressure %}
+                                                            <p class="mb-1">
+                                                                <i class="fas fa-heartbeat text-danger me-1"></i>
+                                                                BP: {{ donation.blood_pressure }}
+                                                            </p>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="col-md-3 text-center">
+                                                        {% if donation.certificate_generated %}
+                                                            <a href="{{ url_for('donor.download_certificate', donation_id=donation.donation_id) }}" 
+                                                               class="btn btn-outline-danger btn-sm mb-2">
+                                                                <i class="fas fa-certificate me-1"></i>Certificate
+                                                            </a>
+                                                        {% endif %}
+                                                        {% if donation.is_verified %}
+                                                            <span class="badge bg-success d-block">
+                                                                <i class="fas fa-check-circle me-1"></i>Verified
+                                                            </span>
+                                                        {% else %}
+                                                            <span class="badge bg-warning d-block">
+                                                                <i class="fas fa-clock me-1"></i>Verification Pending
+                                                            </span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Pagination -->
+                        <nav class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#">Previous</a>
+                                </li>
+                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">Next</a>
+                                </li>
+                            </ul>
+                        </nav>
+
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-tint fa-4x text-muted mb-3"></i>
+                            <h5>No Donation History</h5>
+                            <p class="text-muted">You haven't made any donations yet.</p>
+                            <a href="{{ url_for('donor.emergency_search') }}" class="btn btn-danger">
+                                <i class="fas fa-hand-holding-heart me-2"></i>Find Donation Opportunities
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.donation-timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.donation-item {
+    position: relative;
+    padding-left: 50px;
+    margin-bottom: 30px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 30px;
+    height: 30px;
+    background: #dc3545;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    z-index: 2;
+}
+
+.donation-item::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 30px;
+    bottom: -30px;
+    width: 2px;
+    background: #e9ecef;
+    z-index: 1;
+}
+
+.donation-item:last-child::before {
+    display: none;
+}
+
+.donation-date {
+    text-align: center;
+}
+
+.donation-date .day {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.donation-date .month {
+    display: block;
+    font-size: 1rem;
+    text-transform: uppercase;
+}
+
+.donation-date .year {
+    display: block;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+@media (max-width: 768px) {
+    .donation-item {
+        padding-left: 40px;
+    }
+    
+    .timeline-marker {
+        width: 25px;
+        height: 25px;
+        font-size: 0.875rem;
+    }
+}
+</style>
+
+<script>
+function filterDonations() {
+    const year = document.getElementById('yearFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    
+    document.querySelectorAll('.donation-item').forEach(item => {
+        let show = true;
+        
+        if (year !== 'all' && item.dataset.year !== year) {
+            show = false;
+        }
+        
+        if (status !== 'all' && item.dataset.status !== status) {
+            show = false;
+        }
+        
+        item.style.display = show ? 'block' : 'none';
+    });
+}
+
+function resetFilters() {
+    document.getElementById('yearFilter').value = 'all';
+    document.getElementById('statusFilter').value = 'all';
+    
+    document.querySelectorAll('.donation-item').forEach(item => {
+        item.style.display = 'block';
+    });
+}
+</script>
+{% endblock %}

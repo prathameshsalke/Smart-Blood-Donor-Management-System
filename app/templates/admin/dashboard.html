@@ -1,0 +1,289 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">
+        <i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard
+    </h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item active">Dashboard</li>
+    </ol>
+
+    <!-- Stats Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Donors</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_donors }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Eligible Donors</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.eligible_donors }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Total Requests</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_requests }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-tint fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Pending Requests</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.pending_requests }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row">
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <i class="fas fa-chart-area me-1"></i>
+                    Donations Overview
+                </div>
+                <div class="card-body">
+                    <canvas id="donationsChart" width="100%" height="40"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <i class="fas fa-chart-pie me-1"></i>
+                    Blood Type Distribution
+                </div>
+                <div class="card-body">
+                    <canvas id="bloodTypeChart" width="100%" height="40"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <i class="fas fa-user-plus me-1"></i>
+                    Recent Donors
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Blood Type</th>
+                                    <th>City</th>
+                                    <th>Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for donor in recent_donors %}
+                                <tr>
+                                    <td>{{ donor.user.name }}</td>
+                                    <td><span class="badge bg-danger">{{ donor.blood_type }}</span></td>
+                                    <td>{{ donor.city }}</td>
+                                    <td>{{ donor.created_at.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    Recent Requests
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Blood Type</th>
+                                    <th>Urgency</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in recent_requests %}
+                                <tr>
+                                    <td>{{ request.patient_name }}</td>
+                                    <td><span class="badge bg-danger">{{ request.blood_type_needed }}</span></td>
+                                    <td>
+                                        {% if request.urgency == 'emergency' %}
+                                            <span class="badge bg-danger">Emergency</span>
+                                        {% elif request.urgency == 'high' %}
+                                            <span class="badge bg-warning">High</span>
+                                        {% else %}
+                                            <span class="badge bg-info">{{ request.urgency }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ request.created_at.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <i class="fas fa-bolt me-1"></i>
+                    Quick Actions
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <a href="{{ url_for('admin.manage_donors') }}" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-users me-2"></i>Manage Donors
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{{ url_for('admin.manage_requests') }}" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-tint me-2"></i>Manage Requests
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{{ url_for('admin.manage_hospitals') }}" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-hospital me-2"></i>Manage Hospitals
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{{ url_for('admin.export_data', entity_type='donors') }}" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-download me-2"></i>Export Reports
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Donations Chart
+const donationsCtx = document.getElementById('donationsChart').getContext('2d');
+new Chart(donationsCtx, {
+    type: 'line',
+    data: {
+        labels: {{ chart_labels|safe }},
+        datasets: [{
+            label: 'Donations',
+            data: {{ chart_data|safe }},
+            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+            borderColor: '#dc3545',
+            borderWidth: 2,
+            pointBackgroundColor: '#dc3545',
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0,0,0,0.05)'
+                }
+            }
+        }
+    }
+});
+
+// Blood Type Chart
+const bloodCtx = document.getElementById('bloodTypeChart').getContext('2d');
+new Chart(bloodCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ blood_types|safe }},
+        datasets: [{
+            data: {{ blood_type_counts|safe }},
+            backgroundColor: [
+                '#dc3545', '#ff6b6b', '#28a745', '#20c997',
+                '#17a2b8', '#6610f2', '#fd7e14', '#e83e8c'
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'right'
+            }
+        },
+        cutout: '60%'
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,812 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block title %}Manage Hospitals - Admin{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<style>
+    #locationMap {
+        height: 300px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        border: 2px solid #ddd;
+    }
+    .search-results {
+        max-height: 200px;
+        overflow-y: auto;
+        position: absolute;
+        z-index: 1000;
+        width: 100%;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .search-results .list-group-item {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .search-results .list-group-item:hover {
+        background-color: #dc3545;
+        color: white;
+    }
+    .location-input-group {
+        position: relative;
+    }
+    .map-container {
+        position: relative;
+    }
+    .map-controls {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+        background: white;
+        padding: 8px;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .coordinate-display {
+        background: #f8f9fa;
+        padding: 8px;
+        border-radius: 4px;
+        margin-top: 10px;
+        font-family: monospace;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">
+        <i class="fas fa-hospital me-2"></i>Manage Hospitals
+    </h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Manage Hospitals</li>
+    </ol>
+
+    <!-- Add Hospital Button -->
+    <div class="mb-4">
+        <button class="btn btn-danger" onclick="showAddHospitalModal()">
+            <i class="fas fa-plus me-2"></i>Add New Hospital
+        </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-header bg-white">
+            <i class="fas fa-filter me-1"></i>
+            Filter Hospitals
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">City</label>
+                    <input type="text" class="form-control" id="cityFilter" placeholder="Enter city">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Blood Bank</label>
+                    <select class="form-select" id="bloodBankFilter">
+                        <option value="">All</option>
+                        <option value="yes">Has Blood Bank</option>
+                        <option value="no">No Blood Bank</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Verification</label>
+                    <select class="form-select" id="verificationFilter">
+                        <option value="">All</option>
+                        <option value="verified">Verified</option>
+                        <option value="unverified">Unverified</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-danger w-100" onclick="applyFilters()">
+                        <i class="fas fa-search me-2"></i>Search
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hospitals Table -->
+    <div class="card mb-4">
+        <div class="card-header bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-table me-1"></i>
+                    Hospitals List
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="exportHospitals()">
+                        <i class="fas fa-download me-1"></i>Export
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="hospitalsTable">
+                    <thead class="table-danger">
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>City</th>
+                            <th>Blood Bank</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for hospital in hospitals %}
+                        <tr>
+                            <td>{{ hospital.hospital_id }}</td>
+                            <td>{{ hospital.name }}</td>
+                            <td>{{ hospital.phone }}</td>
+                            <td>{{ hospital.city }}</td>
+                            <td>
+                                {% if hospital.has_blood_bank %}
+                                    <span class="badge bg-success">Yes</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if hospital.is_verified %}
+                                    <span class="badge bg-success">Verified</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-info" onclick="viewHospital({{ hospital.id }})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning" onclick="editHospital({{ hospital.id }})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% if not hospital.is_verified %}
+                                <button class="btn btn-sm btn-outline-success" onclick="verifyHospital({{ hospital.id }})">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                {% endif %}
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteHospital({{ hospital.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#">Previous</a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Hospital Modal -->
+<div class="modal fade" id="hospitalModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="hospitalModalTitle">
+                    <i class="fas fa-plus me-2"></i>Add Hospital
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="hospitalForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Hospital Name *</label>
+                            <input type="text" class="form-control" id="name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Phone *</label>
+                            <input type="tel" class="form-control" id="phone" required pattern="\d{10}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Emergency Phone</label>
+                            <input type="tel" class="form-control" id="emergency_phone">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Address *</label>
+                        <textarea class="form-control" id="address" rows="2" required></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">City *</label>
+                            <input type="text" class="form-control" id="city" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">State *</label>
+                            <input type="text" class="form-control" id="state" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Pincode *</label>
+                            <input type="text" class="form-control" id="pincode" required pattern="\d{6}">
+                        </div>
+                    </div>
+
+                    <!-- Location Section with Map -->
+                    <div class="card mb-3 border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h6 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Hospital Location</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="map-container">
+                                <div id="locationMap"></div>
+                                <div class="map-controls">
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="getCurrentLocation()">
+                                        <i class="fas fa-location-dot"></i> My Location
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="location-input-group mt-3">
+                                <label class="form-label">Search Location</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="locationSearch" 
+                                           placeholder="Enter hospital address or place name">
+                                    <button class="btn btn-danger" type="button" onclick="searchLocation()">
+                                        <i class="fas fa-search"></i> Search
+                                    </button>
+                                </div>
+                                <div id="searchResults" class="search-results list-group mt-2" style="display: none;"></div>
+                            </div>
+
+                            <div class="coordinate-display mt-3">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <small class="text-muted">Latitude:</small>
+                                        <input type="number" step="any" class="form-control form-control-sm" 
+                                               id="latitude" name="latitude" readonly 
+                                               placeholder="Click on map to set">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small class="text-muted">Longitude:</small>
+                                        <input type="number" step="any" class="form-control form-control-sm" 
+                                               id="longitude" name="longitude" readonly 
+                                               placeholder="Click on map to set">
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block mt-2">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Click on the map to set hospital location or use the search box
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Hospital Type</label>
+                            <select class="form-select" id="hospital_type">
+                                <option value="Government">Government</option>
+                                <option value="Private">Private</option>
+                                <option value="Trust">Trust</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Registration Number</label>
+                            <input type="text" class="form-control" id="registration_number">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="has_blood_bank">
+                                <label class="form-check-label" for="has_blood_bank">
+                                    Has Blood Bank
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_verified">
+                                <label class="form-check-label" for="is_verified">
+                                    Verified
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="mt-3">Contact Person</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" id="contact_name">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Designation</label>
+                            <input type="text" class="form-control" id="contact_designation">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" class="form-control" id="contact_phone">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="saveHospital()">Save Hospital</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Hospital Modal -->
+<div class="modal fade" id="viewHospitalModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-hospital me-2"></i>Hospital Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="hospitalDetails">
+                Loading...
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+// ============================================
+// FIXED: Manual JSON construction instead of |tojson
+// ============================================
+let hospitalsData = [
+    {% for hospital in hospitals %}
+    {
+        id: {{ hospital.id }},
+        hospital_id: "{{ hospital.hospital_id }}",
+        name: "{{ hospital.name|replace('"', '\\"') }}",
+        phone: "{{ hospital.phone|replace('"', '\\"') }}",
+        email: "{{ hospital.email|replace('"', '\\"') if hospital.email else '' }}",
+        emergency_phone: "{{ hospital.emergency_phone or '' }}",
+        address: "{{ hospital.address|replace('"', '\\"') }}",
+        city: "{{ hospital.city|replace('"', '\\"') }}",
+        state: "{{ hospital.state|replace('"', '\\"') }}",
+        pincode: "{{ hospital.pincode }}",
+        latitude: {{ hospital.latitude }},
+        longitude: {{ hospital.longitude }},
+        has_blood_bank: {{ 'true' if hospital.has_blood_bank else 'false' }},
+        is_verified: {{ 'true' if hospital.is_verified else 'false' }},
+        hospital_type: "{{ hospital.hospital_type or '' }}",
+        registration_number: "{{ hospital.registration_number or '' }}",
+        license_number: "{{ hospital.license_number or '' }}",
+        website: "{{ hospital.website or '' }}",
+        contact_person_name: "{{ hospital.contact_person_name|replace('"', '\\"') if hospital.contact_person_name else '' }}",
+        contact_person_phone: "{{ hospital.contact_person_phone or '' }}",
+        contact_person_designation: "{{ hospital.contact_person_designation|replace('"', '\\"') if hospital.contact_person_designation else '' }}",
+        created_at: "{{ hospital.created_at.strftime('%Y-%m-%d') if hospital.created_at else '' }}"
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+
+let map;
+let marker;
+let searchTimeout;
+let currentHospitalId = null;
+
+// Initialize map when modal is shown
+document.getElementById('hospitalModal').addEventListener('shown.bs.modal', function() {
+    setTimeout(initLocationMap, 300);
+});
+
+// Initialize map
+function initLocationMap() {
+    if (map) {
+        map.remove();
+    }
+    
+    const defaultLat = 20.5937;
+    const defaultLng = 78.9629;
+    
+    map = L.map('locationMap').setView([defaultLat, defaultLng], 5);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    map.on('click', function(e) {
+        updateLocation(e.latlng.lat, e.latlng.lng);
+    });
+    
+    if (currentHospitalId) {
+        const hospital = hospitalsData.find(h => h.id === currentHospitalId);
+        if (hospital && hospital.latitude && hospital.longitude) {
+            setTimeout(() => {
+                updateLocation(hospital.latitude, hospital.longitude);
+                map.setView([hospital.latitude, hospital.longitude], 15);
+            }, 500);
+        }
+    } else {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                map.setView([lat, lng], 12);
+            });
+        }
+    }
+}
+
+function updateLocation(lat, lng) {
+    document.getElementById('latitude').value = lat.toFixed(6);
+    document.getElementById('longitude').value = lng.toFixed(6);
+    
+    if (marker) {
+        map.removeLayer(marker);
+    }
+    
+    marker = L.marker([lat, lng], {
+        draggable: true
+    }).addTo(map);
+    
+    marker.bindPopup('Hospital Location').openPopup();
+    
+    marker.on('dragend', function(e) {
+        const position = e.target.getLatLng();
+        document.getElementById('latitude').value = position.lat.toFixed(6);
+        document.getElementById('longitude').value = position.lng.toFixed(6);
+    });
+}
+
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            map.setView([lat, lng], 15);
+            updateLocation(lat, lng);
+        }, function(error) {
+            alert('Error getting location: ' + error.message);
+        });
+    } else {
+        alert('Geolocation not supported');
+    }
+}
+
+function searchLocation() {
+    const query = document.getElementById('locationSearch').value;
+    if (query.length < 3) {
+        alert('Please enter at least 3 characters');
+        return;
+    }
+    
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`)
+        .then(response => response.json())
+        .then(data => {
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = '';
+            resultsDiv.style.display = 'block';
+            
+            if (data.length === 0) {
+                resultsDiv.innerHTML = '<div class="list-group-item">No results found</div>';
+                return;
+            }
+            
+            data.forEach(place => {
+                const item = document.createElement('a');
+                item.href = '#';
+                item.className = 'list-group-item list-group-item-action';
+                item.innerHTML = `<i class="fas fa-map-marker-alt me-2"></i>${place.display_name}`;
+                item.onclick = function(e) {
+                    e.preventDefault();
+                    const lat = parseFloat(place.lat);
+                    const lon = parseFloat(place.lon);
+                    map.setView([lat, lon], 15);
+                    updateLocation(lat, lon);
+                    document.getElementById('locationSearch').value = place.display_name;
+                    document.getElementById('address').value = place.display_name.split(',')[0];
+                    resultsDiv.style.display = 'none';
+                };
+                resultsDiv.appendChild(item);
+            });
+        })
+        .catch(error => {
+            console.error('Search error:', error);
+        });
+}
+
+document.getElementById('locationSearch').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(searchLocation, 500);
+});
+
+document.addEventListener('click', function(e) {
+    const results = document.getElementById('searchResults');
+    const searchInput = document.getElementById('locationSearch');
+    if (!searchInput.contains(e.target) && !results.contains(e.target)) {
+        results.style.display = 'none';
+    }
+});
+
+function showAddHospitalModal() {
+    currentHospitalId = null;
+    document.getElementById('hospitalModalTitle').innerHTML = '<i class="fas fa-plus me-2"></i>Add Hospital';
+    document.getElementById('hospitalForm').reset();
+    document.getElementById('latitude').value = '';
+    document.getElementById('longitude').value = '';
+    if (marker) {
+        map.removeLayer(marker);
+        marker = null;
+    }
+    new bootstrap.Modal(document.getElementById('hospitalModal')).show();
+}
+
+function editHospital(hospitalId) {
+    const hospital = hospitalsData.find(h => h.id === hospitalId);
+    if (!hospital) return;
+    
+    currentHospitalId = hospitalId;
+    document.getElementById('hospitalModalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Edit Hospital';
+    
+    document.getElementById('name').value = hospital.name;
+    document.getElementById('phone').value = hospital.phone;
+    document.getElementById('email').value = hospital.email || '';
+    document.getElementById('emergency_phone').value = hospital.emergency_phone || '';
+    document.getElementById('address').value = hospital.address;
+    document.getElementById('city').value = hospital.city;
+    document.getElementById('state').value = hospital.state;
+    document.getElementById('pincode').value = hospital.pincode;
+    document.getElementById('registration_number').value = hospital.registration_number || '';
+    document.getElementById('hospital_type').value = hospital.hospital_type || 'Government';
+    document.getElementById('has_blood_bank').checked = hospital.has_blood_bank;
+    document.getElementById('is_verified').checked = hospital.is_verified;
+    document.getElementById('contact_name').value = hospital.contact_person_name || '';
+    document.getElementById('contact_designation').value = hospital.contact_person_designation || '';
+    document.getElementById('contact_phone').value = hospital.contact_person_phone || '';
+    
+    new bootstrap.Modal(document.getElementById('hospitalModal')).show();
+}
+
+function viewHospital(hospitalId) {
+    const hospital = hospitalsData.find(h => h.id === hospitalId);
+    if (!hospital) return;
+    
+    const details = `
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Hospital ID:</strong> ${hospital.hospital_id}</p>
+                <p><strong>Name:</strong> ${hospital.name}</p>
+                <p><strong>Phone:</strong> ${hospital.phone}</p>
+                <p><strong>Email:</strong> ${hospital.email || 'N/A'}</p>
+                <p><strong>Emergency:</strong> ${hospital.emergency_phone || 'N/A'}</p>
+                <p><strong>Type:</strong> ${hospital.hospital_type || 'N/A'}</p>
+                <p><strong>Registration:</strong> ${hospital.registration_number || 'N/A'}</p>
+                <p><strong>Website:</strong> ${hospital.website || 'N/A'}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Address:</strong> ${hospital.address}</p>
+                <p><strong>City:</strong> ${hospital.city}</p>
+                <p><strong>State:</strong> ${hospital.state}</p>
+                <p><strong>Pincode:</strong> ${hospital.pincode}</p>
+                <p><strong>Location:</strong> ${hospital.latitude}, ${hospital.longitude}</p>
+                <p><strong>Blood Bank:</strong> ${hospital.has_blood_bank ? 'Yes' : 'No'}</p>
+                <p><strong>Status:</strong> ${hospital.is_verified ? 'Verified' : 'Unverified'}</p>
+                <p><strong>Created:</strong> ${hospital.created_at || 'N/A'}</p>
+            </div>
+        </div>
+        <hr>
+        <h6>Contact Person</h6>
+        <div class="row">
+            <div class="col-md-4">
+                <p><strong>Name:</strong> ${hospital.contact_person_name || 'N/A'}</p>
+            </div>
+            <div class="col-md-4">
+                <p><strong>Designation:</strong> ${hospital.contact_person_designation || 'N/A'}</p>
+            </div>
+            <div class="col-md-4">
+                <p><strong>Phone:</strong> ${hospital.contact_person_phone || 'N/A'}</p>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('hospitalDetails').innerHTML = details;
+    new bootstrap.Modal(document.getElementById('viewHospitalModal')).show();
+}
+
+function saveHospital() {
+    const required = ['name', 'phone', 'address', 'city', 'state', 'pincode'];
+    for (let field of required) {
+        if (!document.getElementById(field).value) {
+            alert(`Please fill in ${field}`);
+            return;
+        }
+    }
+    
+    if (!document.getElementById('latitude').value || !document.getElementById('longitude').value) {
+        alert('Please select hospital location on the map');
+        return;
+    }
+    
+    const hospitalData = {
+        name: document.getElementById('name').value,
+        phone: document.getElementById('phone').value,
+        email: document.getElementById('email').value,
+        emergency_phone: document.getElementById('emergency_phone').value,
+        address: document.getElementById('address').value,
+        city: document.getElementById('city').value,
+        state: document.getElementById('state').value,
+        pincode: document.getElementById('pincode').value,
+        latitude: parseFloat(document.getElementById('latitude').value),
+        longitude: parseFloat(document.getElementById('longitude').value),
+        registration_number: document.getElementById('registration_number').value,
+        hospital_type: document.getElementById('hospital_type').value,
+        has_blood_bank: document.getElementById('has_blood_bank').checked,
+        is_verified: document.getElementById('is_verified').checked,
+        contact_person_name: document.getElementById('contact_name').value,
+        contact_person_designation: document.getElementById('contact_designation').value,
+        contact_person_phone: document.getElementById('contact_phone').value
+    };
+    
+    const url = currentHospitalId ? 
+        `/api/hospitals/${currentHospitalId}` : 
+        '/api/hospitals/';
+    
+    const method = currentHospitalId ? 'PUT' : 'POST';
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(hospitalData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            bootstrap.Modal.getInstance(document.getElementById('hospitalModal')).hide();
+            location.reload();
+        } else {
+            alert('Error saving hospital: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving hospital');
+    });
+}
+
+function verifyHospital(hospitalId) {
+    if (confirm('Are you sure you want to verify this hospital?')) {
+        fetch(`/api/hospitals/${hospitalId}/verify`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert('Error verifying hospital');
+            }
+        });
+    }
+}
+
+function deleteHospital(hospitalId) {
+    if (confirm('Are you sure you want to delete this hospital?')) {
+        fetch(`/api/hospitals/${hospitalId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert('Error deleting hospital');
+            }
+        });
+    }
+}
+
+function applyFilters() {
+    const city = document.getElementById('cityFilter').value.toLowerCase();
+    const bloodBank = document.getElementById('bloodBankFilter').value;
+    const verification = document.getElementById('verificationFilter').value;
+    
+    const filtered = hospitalsData.filter(hospital => {
+        if (city && !hospital.city.toLowerCase().includes(city)) return false;
+        if (bloodBank === 'yes' && !hospital.has_blood_bank) return false;
+        if (bloodBank === 'no' && hospital.has_blood_bank) return false;
+        if (verification === 'verified' && !hospital.is_verified) return false;
+        if (verification === 'unverified' && hospital.is_verified) return false;
+        return true;
+    });
+    
+    updateTable(filtered);
+}
+
+function updateTable(hospitals) {
+    const tbody = document.querySelector('#hospitalsTable tbody');
+    if (!tbody) return;
+    
+    if (hospitals.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-4">
+                    <i class="fas fa-hospital fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No hospitals match your filters</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    let html = '';
+    hospitals.forEach(hospital => {
+        html += `
+            <tr>
+                <td>${hospital.hospital_id}</td>
+                <td>${hospital.name}</td>
+                <td>${hospital.phone}</td>
+                <td>${hospital.city}</td>
+                <td>
+                    ${hospital.has_blood_bank ? 
+                        '<span class="badge bg-success">Yes</span>' : 
+                        '<span class="badge bg-secondary">No</span>'}
+                </td>
+                <td>
+                    ${hospital.is_verified ? 
+                        '<span class="badge bg-success">Verified</span>' : 
+                        '<span class="badge bg-warning">Pending</span>'}
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-info" onclick="viewHospital(${hospital.id})">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning" onclick="editHospital(${hospital.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    ${!hospital.is_verified ? `
+                        <button class="btn btn-sm btn-outline-success" onclick="verifyHospital(${hospital.id})">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    ` : ''}
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteHospital(${hospital.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = html;
+}
+
+function exportHospitals() {
+    window.location.href = '/admin/export/hospitals';
+}
+</script>
+{% endblock %}

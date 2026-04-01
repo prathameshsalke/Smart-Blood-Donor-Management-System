@@ -1,0 +1,1177 @@
+{% extends "base.html" %}
+
+{% block title %}Nearby Donors - {{ super() }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<style>
+    #donorMap {
+        height: 500px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border: 2px solid #dc3545;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .donor-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #dc3545;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .donor-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(220,53,69,0.15);
+    }
+    .blood-badge {
+        font-size: 1.2rem;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-weight: 600;
+    }
+    .distance-badge {
+        background: #f8f9fa;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.95rem;
+        display: inline-block;
+        border: 1px solid #dee2e6;
+    }
+    .filter-section {
+        background: white;
+        padding: 1.8rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        margin-bottom: 25px;
+        border: 1px solid #f1f1f1;
+    }
+    .stats-card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+    .nearby-badge {
+        background: #28a745;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        margin-left: 5px;
+    }
+    .contact-btn {
+        transition: all 0.3s;
+    }
+    .contact-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(220,53,69,0.3);
+    }
+    .toast-container {
+        z-index: 1100;
+    }
+    .location-status {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+    }
+    .location-status.success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    .location-status.warning {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeeba;
+    }
+    .location-status.error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    .location-status.info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+    }
+    .accuracy-badge {
+        font-size: 0.8rem;
+        padding: 3px 10px;
+        border-radius: 20px;
+        display: inline-block;
+        margin-left: 10px;
+    }
+    .accuracy-badge.high {
+        background: #28a745;
+        color: white;
+    }
+    .accuracy-badge.medium {
+        background: #ffc107;
+        color: #212529;
+    }
+    .accuracy-badge.low {
+        background: #dc3545;
+        color: white;
+    }
+    .coordinate-badge {
+        background: #e9ecef;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-family: monospace;
+        font-size: 0.85rem;
+    }
+    .distance-info {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    .contact-options-modal .list-group-item {
+        transition: all 0.3s;
+        border-left: 4px solid transparent;
+        cursor: pointer;
+    }
+    .contact-options-modal .list-group-item:hover {
+        transform: translateX(5px);
+        border-left-color: #dc3545;
+        background-color: #fff5f5;
+    }
+    .refresh-location-btn {
+        transition: all 0.3s;
+    }
+    .refresh-location-btn:hover {
+        transform: rotate(180deg);
+    }
+    .sync-status {
+        font-size: 0.8rem;
+        padding: 2px 8px;
+        border-radius: 12px;
+        background: #e9ecef;
+        display: inline-block;
+        margin-left: 10px;
+    }
+    .sync-status.synced {
+        background: #d4edda;
+        color: #155724;
+    }
+    .sync-status.pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Toast Container for Notifications -->
+    <div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3"></div>
+
+    <div class="row">
+        <div class="col-12">
+            <h1 class="display-5 mb-4">
+                <i class="fas fa-map-marked-alt text-danger me-3"></i>
+                Find Nearby Blood Donors
+            </h1>
+            <p class="lead text-muted mb-4">Discover blood donors near you and across the country</p>
+        </div>
+    </div>
+
+    <!-- Location Status with Sync Info -->
+    <div id="locationStatus" class="location-status info mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <i class="fas fa-spinner fa-spin me-2"></i>
+                <span id="statusMessage">Loading your location...</span>
+            </div>
+            <div>
+                <span id="syncStatus" class="sync-status"></span>
+                <span id="accuracyBadge" class="accuracy-badge" style="display: none;"></span>
+                <span id="locationTime" class="small text-muted ms-2"></span>
+            </div>
+        </div>
+        <div class="mt-2 small" id="locationDetails">
+            <span id="currentCoordinates" class="coordinate-badge me-2"></span>
+            <span id="locationAddress"></span>
+        </div>
+        <div id="locationDistanceInfo" class="distance-info mt-2"></div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <div class="row align-items-end">
+            <div class="col-lg-3 mb-3 mb-lg-0">
+                <label class="filter-label fw-bold">
+                    <i class="fas fa-tint text-danger me-2"></i>Blood Type
+                </label>
+                <select class="form-select" id="bloodTypeFilter">
+                    <option value="">All Blood Types</option>
+                    <option value="A+" {% if blood_type == 'A+' %}selected{% endif %}>A+</option>
+                    <option value="A-" {% if blood_type == 'A-' %}selected{% endif %}>A-</option>
+                    <option value="B+" {% if blood_type == 'B+' %}selected{% endif %}>B+</option>
+                    <option value="B-" {% if blood_type == 'B-' %}selected{% endif %}>B-</option>
+                    <option value="AB+" {% if blood_type == 'AB+' %}selected{% endif %}>AB+</option>
+                    <option value="AB-" {% if blood_type == 'AB-' %}selected{% endif %}>AB-</option>
+                    <option value="O+" {% if blood_type == 'O+' %}selected{% endif %}>O+</option>
+                    <option value="O-" {% if blood_type == 'O-' %}selected{% endif %}>O-</option>
+                </select>
+            </div>
+            <div class="col-lg-4 mb-3 mb-lg-0">
+                <label class="filter-label fw-bold">
+                    <i class="fas fa-map-marker-alt text-danger me-2"></i>Search Radius
+                </label>
+                <div class="d-flex align-items-center">
+                    <span class="me-2">1 km</span>
+                    <input type="range" class="form-range" id="radiusFilter" 
+                           min="1" max="500" value="{{ radius|default(50) }}" step="1">
+                    <span class="ms-2">500 km</span>
+                </div>
+                <div class="text-center mt-2">
+                    <span class="fw-bold text-danger" id="radiusValue">{{ radius|default(50) }} km</span>
+                </div>
+            </div>
+            <div class="col-lg-3 mb-3 mb-lg-0">
+                <label class="filter-label fw-bold">
+                    <i class="fas fa-sort text-danger me-2"></i>Sort By
+                </label>
+                <select class="form-select" id="sortFilter">
+                    <option value="distance">Distance (Nearest First)</option>
+                    <option value="name">Name</option>
+                    <option value="blood_type">Blood Type</option>
+                </select>
+            </div>
+            <div class="col-lg-2">
+                <button class="btn btn-danger w-100" onclick="applyFilters()">
+                    <i class="fas fa-search me-2"></i>Search
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Container -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div id="donorMap"></div>
+        </div>
+    </div>
+
+    <!-- Results Summary -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="stats-card">
+                <h3 class="mb-0">
+                    <span class="text-danger" id="totalCount">{{ total_donors|default(0) }}</span>
+                    <small class="text-muted fs-6">Total Donors</small>
+                </h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card">
+                <h3 class="mb-0">
+                    <span class="text-success" id="nearbyCount">{{ nearby_count|default(0) }}</span>
+                    <small class="text-muted fs-6">Within <span id="currentRadius">{{ radius|default(50) }}</span>km</small>
+                </h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card text-end">
+                <button class="btn btn-outline-danger me-2" onclick="refreshDonors()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+                <button class="btn btn-outline-secondary me-2" onclick="centerOnUser()">
+                    <i class="fas fa-location-arrow me-1"></i>Center
+                </button>
+                <button class="btn btn-outline-info refresh-location-btn" onclick="forceRefreshLocation()" title="Force refresh location from server">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Donors Grid -->
+    <div class="row g-4" id="donorsContainer">
+        {% if donors and donors|length > 0 %}
+            {% for donor in donors %}
+            <div class="col-lg-4 col-md-6 donor-item" 
+                 data-distance="{{ donor.distance_km|default(999999) }}"
+                 data-name="{{ donor.name }}"
+                 data-blood="{{ donor.blood_type }}">
+                <div class="card donor-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            {% if donor.profile_photo %}
+                                <img src="{{ donor.profile_photo }}" 
+                                     class="rounded-circle me-3" width="50" height="50" style="object-fit: cover;">
+                            {% else %}
+                                <img src="{{ url_for('static', filename='images/default-avatar.png') }}" 
+                                     class="rounded-circle me-3" width="50" height="50" style="object-fit: cover;">
+                            {% endif %}
+                            <div>
+                                <h5 class="card-title mb-1">{{ donor.name }}</h5>
+                                <p class="text-muted small mb-0">
+                                    <i class="fas fa-map-marker-alt text-danger me-1"></i>
+                                    {{ donor.city }}, {{ donor.state }}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge bg-danger blood-badge">{{ donor.blood_type }}</span>
+                            <span class="distance-badge">
+                                <i class="fas fa-location-arrow text-danger me-1"></i>
+                                {% if donor.distance_km %}
+                                    {{ donor.distance_km }} km
+                                    {% if donor.distance_km <= radius|default(50) %}
+                                        <span class="nearby-badge">Nearby</span>
+                                    {% endif %}
+                                {% else %}
+                                    Distance N/A
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        <div class="mb-3 small">
+                            <div class="text-muted mb-1">
+                                <i class="fas fa-tint me-2"></i>
+                                Total Donations: {{ donor.total_donations|default(0) }}
+                            </div>
+                            <div class="text-muted">
+                                <i class="fas fa-calendar me-2"></i>
+                                Last Donation: {{ donor.last_donation_date|default('Never') }}
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-outline-danger w-100 contact-btn" 
+                                onclick="showContactOptions({{ donor.id }}, '{{ donor.name }}', '{{ donor.phone|default('') }}', '{{ donor.email|default('') }}')">
+                            <i class="fas fa-phone-alt me-2"></i>Contact Donor
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-users-slash fa-4x text-muted mb-3"></i>
+                    <h5>No Donors Found</h5>
+                    <p class="text-muted">Try adjusting your filters or search radius</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+let map;
+let userMarker;
+let donorMarkers = [];
+let circle;
+let userLocation = null;
+let currentDonors = {{ donors|tojson|safe }};
+let locationAccuracy = null;
+let previousLocation = null;
+let locationUpdateListener = null;
+
+// ==================== LOCATION SYNC FUNCTIONS ====================
+
+// Listen for location updates from other tabs/pages
+function setupLocationSync() {
+    // Check for stored location on page load
+    checkStoredLocation();
+    
+    // Listen for storage events (when localStorage changes in another tab)
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'userLocation') {
+            console.log('Location updated in another tab, syncing...');
+            loadUserLocation(true);
+        }
+    });
+    
+    // Custom event for same-page updates
+    window.addEventListener('locationUpdated', function(e) {
+        console.log('Location updated on same page, refreshing...', e.detail);
+        if (e.detail && e.detail.lat && e.detail.lon) {
+            userLocation = { lat: e.detail.lat, lon: e.detail.lon };
+            locationAccuracy = e.detail.accuracy;
+            updateMapAndSearch();
+        }
+    });
+    
+    // Poll for updates every 30 seconds
+    setInterval(checkForLocationUpdates, 30000);
+}
+
+// Check for location updates in sessionStorage
+function checkStoredLocation() {
+    const storedLocation = sessionStorage.getItem('userLocation');
+    if (storedLocation) {
+        try {
+            const loc = JSON.parse(storedLocation);
+            const storedTime = new Date(loc.updated_at);
+            const now = new Date();
+            
+            // Use if less than 5 minutes old
+            if ((now - storedTime) < 5 * 60 * 1000) {
+                if (!userLocation || 
+                    userLocation.lat !== loc.lat || 
+                    userLocation.lon !== loc.lon) {
+                    console.log('Found stored location, updating...');
+                    userLocation = { lat: loc.lat, lon: loc.lon };
+                    locationAccuracy = loc.accuracy;
+                    updateSyncStatus('synced', 'Location synced from profile');
+                    updateMapAndSearch();
+                }
+            }
+        } catch (e) {
+            console.error('Error parsing stored location:', e);
+        }
+    }
+}
+
+// Check for updates by fetching from server
+function checkForLocationUpdates() {
+    fetch('/donor/current-location', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success' && data.location) {
+            const serverLoc = { lat: data.location.lat, lon: data.location.lon };
+            
+            // If location changed, update
+            if (!userLocation || 
+                userLocation.lat !== serverLoc.lat || 
+                userLocation.lon !== serverLoc.lon) {
+                console.log('Server location updated, refreshing...');
+                userLocation = serverLoc;
+                locationAccuracy = data.accuracy;
+                
+                // Update sessionStorage
+                sessionStorage.setItem('userLocation', JSON.stringify({
+                    lat: userLocation.lat,
+                    lon: userLocation.lon,
+                    accuracy: locationAccuracy,
+                    updated_at: new Date().toISOString()
+                }));
+                
+                updateSyncStatus('synced', 'Location synced from server');
+                updateMapAndSearch();
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error checking location updates:', error);
+    });
+}
+
+// Update sync status display
+function updateSyncStatus(status, message) {
+    const syncSpan = document.getElementById('syncStatus');
+    syncSpan.className = `sync-status ${status}`;
+    syncSpan.textContent = message || (status === 'synced' ? '✓ Synced' : '⟳ Pending');
+}
+
+// Update map and search with current location
+function updateMapAndSearch() {
+    if (userLocation) {
+        updateLocationStatus('success', 'Location updated', 
+                           userLocation.lat, userLocation.lon, locationAccuracy);
+        initMap(userLocation.lat, userLocation.lon);
+        searchDonors();
+        
+        // Get address
+        getAddressFromCoords(userLocation.lat, userLocation.lon);
+    }
+}
+
+// ==================== MAP INITIALIZATION ====================
+
+function initMap(lat, lon) {
+    if (map) {
+        map.remove();
+    }
+    
+    map = L.map('donorMap').setView([lat, lon], 8);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Add user marker with accuracy-based color
+    const markerColor = getAccuracyColor(locationAccuracy);
+    userMarker = L.marker([lat, lon], {
+        icon: L.divIcon({
+            className: 'user-marker',
+            html: `<div style="background-color: ${markerColor}; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px ${markerColor};"></div>`,
+            iconSize: [20, 20]
+        })
+    }).addTo(map).bindPopup('Your Location').openPopup();
+    
+    // Add accuracy circle if available
+    if (locationAccuracy && locationAccuracy > 0) {
+        L.circle([lat, lon], {
+            color: markerColor,
+            fillColor: markerColor,
+            fillOpacity: 0.1,
+            radius: locationAccuracy
+        }).addTo(map);
+    }
+    
+    // Add donor markers
+    addDonorMarkers(currentDonors);
+    
+    // Store previous location for distance comparison
+    if (previousLocation) {
+        const distance = calculateDistance(previousLocation.lat, previousLocation.lon, lat, lon);
+        if (distance < 0.1) { // Less than 100 meters
+            document.getElementById('locationDistanceInfo').innerHTML = 
+                `<i class="fas fa-info-circle text-info me-1"></i> You're at roughly the same location (${(distance * 1000).toFixed(0)}m from last visit)`;
+        } else {
+            document.getElementById('locationDistanceInfo').innerHTML = 
+                `<i class="fas fa-map-pin text-success me-1"></i> You've moved ${distance.toFixed(2)} km since last visit`;
+        }
+    }
+    
+    previousLocation = { lat, lon };
+}
+
+function getAccuracyColor(accuracy) {
+    if (!accuracy) return '#dc3545';
+    if (accuracy < 100) return '#28a745';
+    if (accuracy < 500) return '#ffc107';
+    return '#dc3545';
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+// ==================== LOCATION FUNCTIONS ====================
+
+function loadUserLocation(forceRefresh = false) {
+    // Check sessionStorage first (unless force refresh)
+    if (!forceRefresh) {
+        const storedLocation = sessionStorage.getItem('userLocation');
+        if (storedLocation) {
+            try {
+                const loc = JSON.parse(storedLocation);
+                const storedTime = new Date(loc.updated_at);
+                const now = new Date();
+                
+                // Use if less than 5 minutes old
+                if ((now - storedTime) < 5 * 60 * 1000) {
+                    userLocation = { lat: loc.lat, lon: loc.lon };
+                    locationAccuracy = loc.accuracy;
+                    previousLocation = userLocation;
+                    updateSyncStatus('synced', 'Location from profile');
+                    updateLocationStatus('success', 'Location loaded from your profile', loc.lat, loc.lon, loc.accuracy);
+                    initMap(userLocation.lat, userLocation.lon);
+                    searchDonors();
+                    
+                    // Try to get address
+                    getAddressFromCoords(loc.lat, loc.lon);
+                    return;
+                }
+            } catch (e) {}
+        }
+    }
+    
+    // Fall back to server location
+    const userLat = {{ user_lat|default('null') }};
+    const userLon = {{ user_lon|default('null') }};
+    
+    if (userLat && userLon && !isNaN(userLat) && !isNaN(userLon)) {
+        userLocation = { lat: parseFloat(userLat), lon: parseFloat(userLon) };
+        locationAccuracy = null; // Unknown accuracy
+        previousLocation = userLocation;
+        updateSyncStatus('synced', 'Location from server');
+        updateLocationStatus('success', 'Location loaded from server', userLocation.lat, userLocation.lon);
+        initMap(userLocation.lat, userLocation.lon);
+        searchDonors();
+        
+        // Store in sessionStorage
+        sessionStorage.setItem('userLocation', JSON.stringify({
+            lat: userLocation.lat,
+            lon: userLocation.lon,
+            accuracy: null,
+            updated_at: new Date().toISOString()
+        }));
+        
+        getAddressFromCoords(userLocation.lat, userLocation.lon);
+    } else {
+        updateSyncStatus('pending', 'No location found');
+        detectLocation();
+    }
+}
+
+// Force refresh location from server
+function forceRefreshLocation() {
+    updateSyncStatus('pending', 'Refreshing...');
+    loadUserLocation(true);
+}
+
+function detectLocation() {
+    if (navigator.geolocation) {
+        updateLocationStatus('info', 'Detecting your location with GPS...');
+        
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                const accuracy = position.coords.accuracy;
+                
+                userLocation = { lat, lon };
+                locationAccuracy = accuracy;
+                
+                // Update server
+                fetch('/donor/update-location', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        latitude: lat,
+                        longitude: lon,
+                        accuracy: accuracy,
+                        auto_update_address: false
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        updateSyncStatus('synced', 'GPS location');
+                        updateLocationStatus('success', 'Location detected from GPS', lat, lon, accuracy);
+                        initMap(lat, lon);
+                        searchDonors();
+                        
+                        sessionStorage.setItem('userLocation', JSON.stringify({
+                            lat, lon,
+                            accuracy: accuracy,
+                            updated_at: new Date().toISOString()
+                        }));
+                        
+                        getAddressFromCoords(lat, lon);
+                    }
+                });
+            },
+            function(error) {
+                handleGeolocationError(error);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    } else {
+        updateLocationStatus('error', 'Geolocation not supported');
+    }
+}
+
+function refreshLocation() {
+    const refreshBtn = event.currentTarget;
+    const originalHtml = refreshBtn.innerHTML;
+    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    refreshBtn.disabled = true;
+    
+    updateSyncStatus('pending', 'Refreshing...');
+    updateLocationStatus('info', 'Refreshing location from GPS...');
+    
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                const accuracy = position.coords.accuracy;
+                
+                fetch('/donor/update-location', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        latitude: lat,
+                        longitude: lon,
+                        accuracy: accuracy,
+                        auto_update_address: false,
+                        force_update: true
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        sessionStorage.setItem('userLocation', JSON.stringify({
+                            lat, lon,
+                            accuracy: accuracy,
+                            updated_at: new Date().toISOString()
+                        }));
+                        
+                        let message = 'Location refreshed!';
+                        if (data.distance_moved !== undefined && data.distance_moved < 10) {
+                            message = `Location refreshed (moved only ${data.distance_moved.toFixed(1)}m)`;
+                        }
+                        
+                        updateSyncStatus('synced', 'GPS refreshed');
+                        updateLocationStatus('success', message, lat, lon, accuracy);
+                        showNotification(message, data.distance_moved < 10 ? 'info' : 'success');
+                        
+                        // Update map
+                        userLocation = { lat, lon };
+                        locationAccuracy = accuracy;
+                        initMap(lat, lon);
+                        searchDonors();
+                    }
+                })
+                .finally(() => {
+                    refreshBtn.innerHTML = originalHtml;
+                    refreshBtn.disabled = false;
+                });
+            },
+            function(error) {
+                handleGeolocationError(error);
+                refreshBtn.innerHTML = originalHtml;
+                refreshBtn.disabled = false;
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    }
+}
+
+function handleGeolocationError(error) {
+    let message = 'Location error: ';
+    switch(error.code) {
+        case error.PERMISSION_DENIED:
+            message += 'Please enable location access.';
+            break;
+        case error.POSITION_UNAVAILABLE:
+            message += 'Location unavailable.';
+            break;
+        case error.TIMEOUT:
+            message += 'Request timed out.';
+            break;
+        default:
+            message += error.message;
+    }
+    updateSyncStatus('pending', 'Location error');
+    updateLocationStatus('error', message);
+}
+
+function getAddressFromCoords(lat, lon) {
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.display_name) {
+                document.getElementById('locationAddress').innerHTML = 
+                    `<i class="fas fa-map-pin me-1"></i>${data.display_name.substring(0, 100)}...`;
+            }
+        })
+        .catch(() => {});
+}
+
+function updateLocationStatus(type, message, lat, lon, accuracy) {
+    const statusDiv = document.getElementById('locationStatus');
+    const statusMessage = document.getElementById('statusMessage');
+    const accuracyBadge = document.getElementById('accuracyBadge');
+    const locationTime = document.getElementById('locationTime');
+    
+    statusDiv.className = `location-status ${type}`;
+    statusMessage.textContent = message;
+    
+    if (lat && lon) {
+        document.getElementById('currentCoordinates').innerHTML = 
+            `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+        locationTime.innerHTML = `Updated: ${new Date().toLocaleTimeString()}`;
+        
+        if (accuracy) {
+            let accuracyText = '';
+            let accuracyClass = '';
+            if (accuracy < 100) {
+                accuracyText = 'High Accuracy';
+                accuracyClass = 'high';
+            } else if (accuracy < 500) {
+                accuracyText = 'Medium Accuracy';
+                accuracyClass = 'medium';
+            } else {
+                accuracyText = 'Low Accuracy';
+                accuracyClass = 'low';
+            }
+            
+            accuracyBadge.textContent = `${accuracyText} (${Math.round(accuracy)}m)`;
+            accuracyBadge.className = `accuracy-badge ${accuracyClass}`;
+            accuracyBadge.style.display = 'inline-block';
+        } else {
+            accuracyBadge.style.display = 'none';
+        }
+    }
+}
+
+// ==================== DONOR FUNCTIONS ====================
+
+function addDonorMarkers(donors) {
+    if (donorMarkers) {
+        donorMarkers.forEach(marker => map.removeLayer(marker));
+    }
+    donorMarkers = [];
+    
+    donors.forEach(donor => {
+        if (donor.latitude && donor.longitude) {
+            const isNearby = donor.distance_km && donor.distance_km <= {{ radius|default(50) }};
+            const marker = L.marker([donor.latitude, donor.longitude], {
+                icon: L.divIcon({
+                    className: 'donor-marker',
+                    html: `<div style="background-color: ${isNearby ? '#28a745' : '#ffc107'}; width: 15px; height: 15px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 5px ${isNearby ? '#28a745' : '#ffc107'};"></div>`,
+                    iconSize: [15, 15]
+                })
+            }).addTo(map)
+            .bindPopup(`
+                <b>${donor.name}</b><br>
+                Blood Type: ${donor.blood_type}<br>
+                Distance: ${donor.distance_km || 'N/A'} km<br>
+                Phone: ${donor.phone || 'N/A'}<br>
+                ${isNearby ? '<span class="badge bg-success">Nearby</span>' : ''}<br>
+                <button class="btn btn-sm btn-danger mt-2 w-100" onclick="showContactOptions(${donor.id}, '${donor.name}', '${donor.phone || ''}', '${donor.email || ''}')">
+                    <i class="fas fa-phone-alt"></i> Contact
+                </button>
+            `);
+            
+            donorMarkers.push(marker);
+        }
+    });
+}
+
+async function searchDonors() {
+    if (!userLocation) return;
+    
+    const bloodType = document.getElementById('bloodTypeFilter').value;
+    const radius = document.getElementById('radiusFilter').value;
+    
+    try {
+        const url = `/api/donors/nearby?lat=${userLocation.lat}&lon=${userLocation.lon}&radius=${radius}&blood_type=${bloodType}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            currentDonors = data.donors || [];
+            addDonorMarkers(currentDonors);
+            
+            const nearbyCount = currentDonors.filter(d => d.distance_km && d.distance_km <= radius).length;
+            document.getElementById('totalCount').textContent = currentDonors.length;
+            document.getElementById('nearbyCount').textContent = nearbyCount;
+            document.getElementById('currentRadius').textContent = radius;
+            
+            updateDonorCards(currentDonors);
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+        showNotification('Error searching donors', 'danger');
+    }
+}
+
+function updateDonorCards(donors) {
+    const container = document.getElementById('donorsContainer');
+    const radius = document.getElementById('radiusFilter').value;
+    
+    if (!donors || donors.length === 0) {
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-users-slash fa-4x text-muted mb-3"></i>
+                    <h5>No Donors Found</h5>
+                    <p class="text-muted">Try adjusting your filters or search radius</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    donors.forEach(donor => {
+        const isNearby = donor.distance_km && donor.distance_km <= radius;
+        
+        html += `
+            <div class="col-lg-4 col-md-6 donor-item">
+                <div class="card donor-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <img src="${donor.profile_photo || '{{ url_for('static', filename='images/default-avatar.png') }}'}" 
+                                 class="rounded-circle me-3" width="50" height="50" style="object-fit: cover;">
+                            <div>
+                                <h5 class="card-title mb-1">${donor.name}</h5>
+                                <p class="text-muted small mb-0">
+                                    <i class="fas fa-map-marker-alt text-danger me-1"></i>
+                                    ${donor.city}, ${donor.state}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge bg-danger blood-badge">${donor.blood_type}</span>
+                            <span class="distance-badge">
+                                <i class="fas fa-location-arrow text-danger me-1"></i>
+                                ${donor.distance_km ? donor.distance_km + ' km' : 'N/A'}
+                                ${isNearby ? '<span class="nearby-badge">Nearby</span>' : ''}
+                            </span>
+                        </div>
+                        
+                        <div class="mb-3 small">
+                            <div class="text-muted mb-1">
+                                <i class="fas fa-tint me-2"></i>
+                                Total Donations: ${donor.total_donations || 0}
+                            </div>
+                            <div class="text-muted">
+                                <i class="fas fa-calendar me-2"></i>
+                                Last Donation: ${donor.last_donation_date || 'Never'}
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-outline-danger w-100 contact-btn" 
+                                onclick="showContactOptions(${donor.id}, '${donor.name}', '${donor.phone || ''}', '${donor.email || ''}')">
+                            <i class="fas fa-phone-alt me-2"></i>Contact Donor
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// ==================== FILTER FUNCTIONS ====================
+
+function applyFilters() {
+    const bloodType = document.getElementById('bloodTypeFilter').value;
+    const radius = document.getElementById('radiusFilter').value;
+    const sortBy = document.getElementById('sortFilter').value;
+    
+    let filteredDonors = currentDonors.filter(donor => {
+        if (bloodType && donor.blood_type !== bloodType) return false;
+        return true;
+    });
+    
+    if (sortBy === 'distance') {
+        filteredDonors.sort((a, b) => (a.distance_km || 999999) - (b.distance_km || 999999));
+    } else if (sortBy === 'name') {
+        filteredDonors.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortBy === 'blood_type') {
+        filteredDonors.sort((a, b) => a.blood_type.localeCompare(b.blood_type));
+    }
+    
+    const nearbyCount = filteredDonors.filter(d => d.distance_km && d.distance_km <= radius).length;
+    document.getElementById('totalCount').textContent = filteredDonors.length;
+    document.getElementById('nearbyCount').textContent = nearbyCount;
+    
+    addDonorMarkers(filteredDonors);
+    drawRadius(radius);
+    updateDonorCards(filteredDonors);
+}
+
+function drawRadius(radius) {
+    if (!userLocation) return;
+    
+    if (circle) {
+        map.removeLayer(circle);
+    }
+    
+    circle = L.circle([userLocation.lat, userLocation.lon], {
+        color: '#dc3545',
+        fillColor: '#f03',
+        fillOpacity: 0.1,
+        radius: radius * 1000
+    }).addTo(map);
+}
+
+function centerOnUser() {
+    if (userLocation) {
+        map.setView([userLocation.lat, userLocation.lon], 12);
+    }
+}
+
+function refreshDonors() {
+    location.reload();
+}
+
+// ==================== CONTACT FUNCTIONS ====================
+
+function showContactOptions(donorId, donorName, donorPhone, donorEmail) {
+    const modalId = 'contactModal_' + donorId;
+    
+    const existingModal = document.getElementById(modalId);
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    const modalHtml = `
+        <div class="modal fade contact-options-modal" id="${modalId}" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-phone-alt me-2"></i>
+                            Contact ${donorName}
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="list-group">
+                            ${donorPhone ? `
+                            <a href="tel:${donorPhone}" class="list-group-item list-group-item-action">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-phone-alt fa-2x text-success"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">Call Now</h6>
+                                        <p class="mb-0 text-muted">${donorPhone}</p>
+                                    </div>
+                                </div>
+                            </a>
+                            ` : ''}
+                            
+                            <a href="/donor/contact/${donorId}" class="list-group-item list-group-item-action">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-comment fa-2x text-info"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">Send Message</h6>
+                                        <p class="mb-0 text-muted">Send in-app message or email</p>
+                                    </div>
+                                </div>
+                            </a>
+                            
+                            ${donorPhone ? `
+                            <a href="#" class="list-group-item list-group-item-action" onclick="copyPhoneNumber('${donorPhone}'); return false;">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-copy fa-2x text-warning"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">Copy Phone Number</h6>
+                                        <p class="mb-0 text-muted">${donorPhone}</p>
+                                    </div>
+                                </div>
+                            </a>
+                            ` : ''}
+                            
+                            ${donorEmail ? `
+                            <a href="mailto:${donorEmail}" class="list-group-item list-group-item-action">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-envelope fa-2x text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">Send Email</h6>
+                                        <p class="mb-0 text-muted">${donorEmail}</p>
+                                    </div>
+                                </div>
+                            </a>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById(modalId));
+    modal.show();
+}
+
+function copyPhoneNumber(phone) {
+    navigator.clipboard.writeText(phone).then(() => {
+        showNotification('Phone number copied to clipboard!', 'success');
+    }).catch(() => {
+        const textarea = document.createElement('textarea');
+        textarea.value = phone;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showNotification('Phone number copied to clipboard!', 'success');
+    });
+}
+
+// ==================== UTILITY FUNCTIONS ====================
+
+function showNotification(message, type) {
+    const toastContainer = document.getElementById('toastContainer');
+    
+    const toastId = 'toast-' + Date.now();
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.id = toastId;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    const icon = type === 'success' ? 'fa-check-circle' : type === 'danger' ? 'fa-exclamation-circle' : 'fa-info-circle';
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fas ${icon} me-2"></i>
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    const bsToast = new bootstrap.Toast(toast, {
+        autohide: true,
+        delay: 3000
+    });
+    
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', function() {
+        toast.remove();
+    });
+}
+
+// ==================== EVENT LISTENERS ====================
+
+document.getElementById('radiusFilter').addEventListener('input', function(e) {
+    document.getElementById('radiusValue').textContent = e.target.value + ' km';
+});
+
+document.getElementById('bloodTypeFilter').addEventListener('change', function() {
+    if (userLocation) {
+        applyFilters();
+    }
+});
+
+document.getElementById('sortFilter').addEventListener('change', function() {
+    if (userLocation) {
+        applyFilters();
+    }
+});
+
+// ==================== INITIALIZATION ====================
+
+document.addEventListener('DOMContentLoaded', function() {
+    setupLocationSync();
+    loadUserLocation();
+});
+</script>
+{% endblock %}

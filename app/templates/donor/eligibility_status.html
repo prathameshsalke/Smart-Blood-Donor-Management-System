@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Eligibility Status - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h2 class="mb-4 text-center">
+                <i class="fas fa-heartbeat text-danger me-2"></i>Donation Eligibility Status
+            </h2>
+
+            <!-- Main Eligibility Card -->
+            <div class="card shadow-lg border-{{ 'success' if eligibility.is_eligible else 'warning' }} mb-4">
+                <div class="card-body text-center p-5">
+                    {% if eligibility.is_eligible %}
+                        <div class="eligibility-icon mb-4">
+                            <i class="fas fa-check-circle fa-5x text-success"></i>
+                        </div>
+                        <h3 class="text-success mb-3">You Are Eligible to Donate!</h3>
+                        <p class="lead">{{ eligibility.message }}</p>
+                        <div class="mt-4">
+                            <a href="{{ url_for('donor.emergency_search') }}" class="btn btn-danger btn-lg">
+                                <i class="fas fa-hand-holding-heart me-2"></i>Find Donation Opportunities
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="eligibility-icon mb-4">
+                            <i class="fas fa-exclamation-triangle fa-5x text-warning"></i>
+                        </div>
+                        <h3 class="text-warning mb-3">Currently Not Eligible</h3>
+                        <p class="lead">{{ eligibility.message }}</p>
+                        
+                        {% if eligibility.next_eligible_date %}
+                            <div class="next-eligible mt-4 p-3 bg-light rounded">
+                                <h5>Next Eligible Date</h5>
+                                <p class="display-6 text-danger">{{ eligibility.next_eligible_date.strftime('%d %B, %Y') }}</p>
+                                <div class="progress" style="height: 10px;">
+                                    {% set days_passed = (now() - donor.last_donation_date).days %}
+                                    {% set total_days = 90 %}
+                                    {% set percentage = (days_passed / total_days * 100)|round %}
+                                    <div class="progress-bar bg-danger" style="width: {{ percentage }}%"></div>
+                                </div>
+                                <p class="small text-muted mt-2">{{ days_passed }} of 90 days completed</p>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Eligibility Checklist -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clipboard-check text-danger me-2"></i>Eligibility Checklist
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-3">
+                                    <!-- <i class="fas fa-{{ 'check-circle text-success' if donor.calculate_age() >= 18 else 'times-circle text-danger' }} me-2"></i>
+                                    Age: {{ donor.calculate_age() }} years (Minimum 18)
+                                </li> -->
+                                <!-- In eligibility_status.html, line 63 should be fine now -->
+                                <i class="fas fa-{{ 'check-circle text-success' if donor and donor.calculate_age() >= 18 else 'times-circle text-danger' }} me-2"></i>
+                                <li class="mb-3">
+                                    <i class="fas fa-{{ 'check-circle text-success' if donor.calculate_age() <= 65 else 'times-circle text-danger' }} me-2"></i>
+                                    Age: Under 65 years
+                                </li>
+                                <li class="mb-3">
+                                    <i class="fas fa-{{ 'check-circle text-success' if donor.weight >= 45 else 'times-circle text-danger' }} me-2"></i>
+                                    Weight: {{ donor.weight }} kg (Minimum 45 kg)
+                                </li>
+                                <li class="mb-3">
+                                    <i class="fas fa-{{ 'check-circle text-success' if donor.last_donation_date and (now() - donor.last_donation_date).days >= 90 else 'times-circle text-danger' if donor.last_donation_date else 'check-circle text-success' }} me-2"></i>
+                                    90-day gap since last donation
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-3">
+                                    <i class="fas fa-{{ 'check-circle text-success' if donor.medical_conditions is none else 'question-circle text-warning' }} me-2"></i>
+                                    No disqualifying medical conditions
+                                </li>
+                                <li class="mb-3">
+                                    <i class="fas fa-{{ 'check-circle text-success' if donor.medications is none else 'question-circle text-warning' }} me-2"></i>
+                                    No conflicting medications
+                                </li>
+                                <li class="mb-3">
+                                    <i class="fas fa-{{ 'check-circle text-success' if donor.total_donations < 4 else 'times-circle text-danger' if donor.total_donations >= 4 else 'check-circle text-success' }} me-2"></i>
+                                    Less than 4 donations this year ({{ donor.total_donations }})
+                                </li>
+                                <li class="mb-3">
+                                    <i class="fas fa-{{ 'check-circle text-success' if donor.is_available else 'times-circle text-danger' }} me-2"></i>
+                                    Available for donation
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Donation History Summary -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history text-danger me-2"></i>Donation History Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h3 class="text-danger">{{ donor.total_donations }}</h3>
+                            <p class="text-muted">Total Donations</p>
+                        </div>
+                        <div class="col-4">
+                            <h3 class="text-danger">{{ donor.total_donations * 3 }}</h3>
+                            <p class="text-muted">Lives Saved</p>
+                        </div>
+                        <div class="col-4">
+                            <h3 class="text-danger">
+                                {% if donor.last_donation_date %}
+                                    {{ (now() - donor.last_donation_date).days }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </h3>
+                            <p class="text-muted">Days Since Last Donation</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Medical Advisory -->
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Medical Advisory
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6>Temporary Deferral Conditions:</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul>
+                                <li>Cold, flu, or fever (wait 7 days)</li>
+                                <li>Antibiotics (wait 14 days after course)</li>
+                                <li>Dental work (wait 7 days)</li>
+                                <li>Surgery (wait 6 months)</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul>
+                                <li>Tattoo/Piercing (wait 6 months)</li>
+                                <li>Pregnancy (wait 6 months after delivery)</li>
+                                <li>Vaccination (wait 28 days)</li>
+                                <li>Travel to malaria areas (wait 1 year)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning mt-3 mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        If you have any of these conditions, please wait the specified period before donating.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.eligibility-icon {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.progress {
+    border-radius: 10px;
+}
+
+.list-unstyled li {
+    padding: 0.5rem;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.list-unstyled li:hover {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}

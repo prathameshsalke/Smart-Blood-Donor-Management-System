@@ -1,0 +1,93 @@
+{% macro hospital_card(hospital, show_actions=True) %}
+<div class="card hospital-card h-100">
+    <div class="card-body">
+        <div class="d-flex align-items-center mb-3">
+            <div class="hospital-icon me-3">
+                <i class="fas fa-hospital fa-2x text-info"></i>
+            </div>
+            <div>
+                <h5 class="card-title mb-1">{{ hospital.name }}</h5>
+                <p class="text-muted small mb-0">{{ hospital.city }}, {{ hospital.state }}</p>
+            </div>
+        </div>
+
+        <div class="hospital-info mb-3">
+            <p class="mb-2 small">
+                <i class="fas fa-map-marker-alt text-info me-2"></i>
+                {{ hospital.address }}
+            </p>
+            <p class="mb-2 small">
+                <i class="fas fa-phone text-info me-2"></i>
+                {{ hospital.phone }}
+            </p>
+            {% if hospital.email %}
+            <p class="mb-2 small">
+                <i class="fas fa-envelope text-info me-2"></i>
+                {{ hospital.email }}
+            </p>
+            {% endif %}
+        </div>
+
+        <div class="hospital-badges mb-3">
+            {% if hospital.has_blood_bank %}
+                <span class="badge bg-success me-1">
+                    <i class="fas fa-tint me-1"></i>Blood Bank
+                </span>
+            {% endif %}
+            {% if hospital.is_verified %}
+                <span class="badge bg-info">
+                    <i class="fas fa-check-circle me-1"></i>Verified
+                </span>
+            {% endif %}
+            {% if hospital.distance_km %}
+                <span class="badge bg-secondary">
+                    <i class="fas fa-map-marker-alt me-1"></i>{{ hospital.distance_km|round(1) }} km
+                </span>
+            {% endif %}
+        </div>
+
+        {% if hospital.emergency_phone %}
+        <div class="emergency-contact mb-3">
+            <small class="text-danger">
+                <i class="fas fa-exclamation-triangle me-1"></i>
+                Emergency: {{ hospital.emergency_phone }}
+            </small>
+        </div>
+        {% endif %}
+
+        {% if show_actions %}
+        <div class="hospital-actions">
+            <div class="d-grid gap-2">
+                <button class="btn btn-outline-info btn-sm" onclick="viewHospital({{ hospital.id }})">
+                    <i class="fas fa-info-circle me-1"></i>Details
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="getDirections({{ hospital.latitude }}, {{ hospital.longitude }})">
+                    <i class="fas fa-directions me-1"></i>Directions
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.hospital-card {
+    transition: all 0.3s;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+.hospital-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(23,162,184,0.1);
+    border-color: #17a2b8;
+}
+.hospital-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(23,162,184,0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+{% endmacro %}

@@ -1,0 +1,125 @@
+"""
+Donor Model for donor-specific information
+"""
+
+from app import db
+from datetime import datetime, timedelta
+from sqlalchemy import event
+
+class Donor(db.Model):
+    """Donor profile model"""
+    __tablename__ = 'donors'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True, nullable=False)
+    
+    # Personal Information
+    blood_type = db.Column(db.String(5), nullable=False)
+    date_of_birth = db.Column(db.Date, nullable=False)
+    gender = db.Column(db.String(10), nullable=False)
+    weight = db.Column(db.Float, nullable=False)
+    
+    # Contact Information
+    address = db.Column(db.String(200), nullable=False)
+    city = db.Column(db.String(50), nullable=False)
+    state = db.Column(db.String(50), nullable=False)
+    pincode = db.Column(db.String(10), nullable=False)
+    
+    # Location
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
+    location_updated_at = db.Column(db.DateTime)
+    
+    # Medical Information
+    medical_conditions = db.Column(db.Text)
+    medications = db.Column(db.Text)
+    last_donation_date = db.Column(db.DateTime)
+    total_donations = db.Column(db.Integer, default=0)
+    
+    # Status
+    is_available = db.Column(db.Boolean, default=True)
+    is_eligible = db.Column(db.Boolean, default=True)
+    eligibility_updated_at = db.Column(db.DateTime)
+    
+    # Emergency Contact
+    emergency_contact_name = db.Column(db.String(100))
+    emergency_contact_phone = db.Column(db.String(20))
+    emergency_contact_relation = db.Column(db.String(50))
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships - FIXED: Use user_id as the link to donations
+    # Donations are linked through the user, not directly to donor
+    donation_history = db.relationship(
+        'Donation',
+        primaryjoin="User.id == Donation.donor_id",
+        secondaryjoin="and_(Donor.user_id == User.id)",
+        viewonly=True,
+        lazy='dynamic'
+    )
+    
+    def calculate_age(self):
+        """Calculate donor's age"""
+        today = datetime.now().date()
+        age = today.year - self.date_of_birth.year
+        if today.month < self.date_of_birth.month or \
+           (today.month == self.date_of_birth.month and today.day < self.date_of_birth.day):
+            age -= 1
+        return age
+    
+    def check_eligibility(self):
+        """Check if donor is eligible to donate"""
+        if not self.is_available:
+            return False, "Donor is marked as unavailable"
+        
+        if self.calculate_age() < 18 or self.calculate_age() > 65:
+            return False, "Donor age must be between 18 and 65 years"
+        
+        if self.weight < 45:
+            return False, "Donor weight must be at least 45 kg"
+        
+        if self.last_donation_date:
+            days_since_last = (datetime.now() - self.last_donation_date).days
+            if days_since_last < 90:
+                return False, f"Must wait {90 - days_since_last} more days"
+        
+        return True, "Donor is eligible"
+    
+    def update_eligibility(self):
+        """Update eligibility status"""
+        is_eligible, message = self.check_eligibility()
+        self.is_eligible = is_eligible
+        self.eligibility_updated_at = datetime.utcnow()
+        return is_eligible, message
+    
+    def get_next_eligible_date(self):
+        """Calculate next eligible donation date"""
+        if not self.last_donation_date:
+            return datetime.now().date()
+        return (self.last_donation_date + timedelta(days=90)).date()
+    
+    def to_dict(self):
+        """Convert donor to dictionary for API"""
+        return {
+            'id': self.id,
+            'name': self.user_account.name if hasattr(self, 'user_account') else None,
+            'blood_type': self.blood_type,
+            'age': self.calculate_age(),
+            'city': self.city,
+            'phone': self.user_account.phone if hasattr(self, 'user_account') else None,
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'is_eligible': self.is_eligible,
+            'total_donations': self.total_donations
+        }
+    
+    def __repr__(self):
+        return f'<Donor {self.user_id} - {self.blood_type}>'
+
+# Event listener
+@event.listens_for(Donor, 'before_insert')
+@event.listens_for(Donor, 'before_update')
+def update_eligibility_on_save(mapper, connection, target):
+    target.update_eligibility()

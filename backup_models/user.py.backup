@@ -1,0 +1,84 @@
+"""
+User Model
+"""
+
+from app import db, login_manager
+from flask_login import UserMixin
+from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+class User(UserMixin, db.Model):
+    __tablename__ = 'users'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    phone = db.Column(db.String(20), unique=True, nullable=False)
+    role = db.Column(db.String(20), default='donor')
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_login = db.Column(db.DateTime)
+    
+    # Relationships
+    donor_profile = db.relationship(
+        'Donor', 
+        backref='user_account', 
+        uselist=False, 
+        cascade='all, delete-orphan',
+        foreign_keys='Donor.user_id'
+    )
+    
+    donations_list = db.relationship(
+        'Donation', 
+        backref='donor_user',
+        foreign_keys='Donation.donor_id',
+        lazy='dynamic'
+    )
+    
+    requests_list = db.relationship(
+        'BloodRequest', 
+        backref='requester_user',
+        foreign_keys='BloodRequest.requester_id',
+        lazy='dynamic'
+    )
+    
+    admin_logs = db.relationship(
+        'AdminLog',
+        backref='admin_user',
+        foreign_keys='AdminLog.admin_id',
+        lazy='dynamic'
+    )
+    
+    verified_donations = db.relationship(
+        'Donation',
+        backref='verifier_user',
+        foreign_keys='Donation.verified_by',
+        lazy='dynamic'
+    )
+    
+    def set_password(self, password):
+        self.password = generate_password_hash(password)
+    
+    def check_password(self, password):
+        return check_password_hash(self.password, password)
+    
+    def update_last_login(self):
+        self.last_login = datetime.utcnow()
+        db.session.commit()
+    
+    def is_admin(self):
+        return self.role == 'admin'
+    
+    def is_donor(self):
+        return self.role == 'donor'
+    
+    def get_donations(self):
+        return self.donations_list.all()
+    
+    def __repr__(self):
+        return f'<User {self.email}>'

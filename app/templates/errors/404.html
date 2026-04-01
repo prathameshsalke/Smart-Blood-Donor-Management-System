@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center min-vh-75 align-items-center">
+        <div class="col-md-8 col-lg-6 text-center">
+            <div class="error-template py-5">
+                <h1 class="display-1 text-danger mb-4">404</h1>
+                <div class="error-details mb-4">
+                    <i class="fas fa-map-signs fa-4x text-muted mb-3"></i>
+                    <h2 class="h3">Oops! Page Not Found</h2>
+                    <p class="text-muted">
+                        The page you are looking for might have been removed, had its name changed, 
+                        or is temporarily unavailable.
+                    </p>
+                </div>
+                
+                <div class="error-actions mt-4">
+                    <a href="{{ url_for('main.index') }}" class="btn btn-danger btn-lg me-2">
+                        <i class="fas fa-home me-2"></i>Go to Homepage
+                    </a>
+                    <a href="{{ url_for('main.contact') }}" class="btn btn-outline-danger btn-lg">
+                        <i class="fas fa-envelope me-2"></i>Contact Support
+                    </a>
+                </div>
+                
+                <!-- Helpful Links -->
+                <div class="row mt-5">
+                    <div class="col-md-4">
+                        <a href="{{ url_for('main.search_donors') }}" class="text-decoration-none">
+                            <i class="fas fa-search text-danger mb-2 fa-2x"></i>
+                            <h6>Find Donors</h6>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{{ url_for('main.emergency') }}" class="text-decoration-none">
+                            <i class="fas fa-exclamation-triangle text-danger mb-2 fa-2x"></i>
+                            <h6>Emergency Request</h6>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{{ url_for('auth.register') }}" class="text-decoration-none">
+                            <i class="fas fa-user-plus text-danger mb-2 fa-2x"></i>
+                            <h6>Become a Donor</h6>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.min-vh-75 {
+    min-height: 75vh;
+}
+.error-template {
+    animation: fadeIn 0.5s ease-in;
+}
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+{% endblock %}

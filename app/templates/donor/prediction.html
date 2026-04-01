@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Availability Prediction - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-robot me-2"></i>AI Availability Prediction
+                    </h5>
+                </div>
+                <div class="card-body text-center py-5">
+                    {% if prediction %}
+                        <div class="display-1 mb-4">
+                            <i class="fas fa-chart-line text-danger"></i>
+                        </div>
+                        <h2 class="mb-3">{{ (prediction.probability * 100)|int }}%</h2>
+                        <p class="lead">{{ prediction.message }}</p>
+                        
+                        <div class="progress mb-4" style="height: 20px;">
+                            <div class="progress-bar bg-danger" 
+                                 style="width: {{ prediction.probability * 100 }}%">
+                                {{ (prediction.probability * 100)|int }}%
+                            </div>
+                        </div>
+                        
+                        <p class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Confidence: {{ prediction.confidence|title }}
+                        </p>
+                        
+                        {% if prediction.will_donate %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                You're likely to be available for donation!
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                You might not be available at this time.
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            Unable to generate prediction at this time.
+                        </div>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('donor.dashboard') }}" class="btn btn-danger mt-3">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

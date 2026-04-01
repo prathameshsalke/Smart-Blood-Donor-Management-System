@@ -1,0 +1,68 @@
+{% extends "layouts/base.html" %}
+
+{% block body %}
+<div class="auth-wrapper">
+    <div class="auth-container">
+        <!-- Logo -->
+        <div class="text-center mb-4">
+            <a href="{{ url_for('main.index') }}">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" 
+                     alt="Logo" height="60" class="mb-3">
+            </a>
+            <h2 class="text-danger">Smart Blood Donor</h2>
+            <p class="text-muted">Donate blood, save lives</p>
+        </div>
+
+        <!-- Auth Card -->
+        <div class="card auth-card">
+            <div class="card-body">
+                {% block auth_content %}{% endblock %}
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-3">
+            <p class="small text-muted">
+                &copy; {{ now().year }} Smart Blood Donor System. All rights reserved.
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-wrapper {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 450px;
+}
+
+.auth-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    overflow: hidden;
+}
+
+.auth-card .card-body {
+    padding: 2.5rem;
+}
+
+@media (max-width: 576px) {
+    .auth-wrapper {
+        padding: 1rem;
+    }
+    
+    .auth-card .card-body {
+        padding: 1.5rem;
+    }
+}
+</style>
+{% endblock %}

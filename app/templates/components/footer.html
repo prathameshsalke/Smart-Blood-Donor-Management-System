@@ -1,0 +1,98 @@
+<footer class="footer bg-dark text-white py-4 mt-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 mb-4 mb-md-0">
+                <h5>
+                    <i class="fas fa-tint text-danger me-2"></i>Smart Blood Donor
+                </h5>
+                <p class="small text-muted">
+                    Connecting donors with those in need through technology. 
+                    Every drop counts, every life matters.
+                </p>
+                <div class="social-links">
+                    <a href="#" class="text-white me-2"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="text-white me-2"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="text-white me-2"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="text-white"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+            </div>
+
+            <div class="col-md-2 mb-4 mb-md-0">
+                <h6>Quick Links</h6>
+                <ul class="list-unstyled small">
+                    <li class="mb-2"><a href="{{ url_for('main.index') }}" class="text-muted">Home</a></li>
+                    <li class="mb-2"><a href="{{ url_for('main.about') }}" class="text-muted">About Us</a></li>
+                    <li class="mb-2"><a href="{{ url_for('main.contact') }}" class="text-muted">Contact</a></li>
+                    <li class="mb-2"><a href="{{ url_for('main.faq') }}" class="text-muted">FAQ</a></li>
+                </ul>
+            </div>
+
+            <div class="col-md-3 mb-4 mb-md-0">
+                <h6>For Donors</h6>
+                <ul class="list-unstyled small">
+                    <li class="mb-2"><a href="{{ url_for('auth.register') }}" class="text-muted">Register</a></li>
+                    <li class="mb-2"><a href="{{ url_for('main.search_donors') }}" class="text-muted">Find Donors</a></li>
+                    <li class="mb-2"><a href="{{ url_for('main.emergency') }}" class="text-muted">Emergency Request</a></li>
+                    <li class="mb-2"><a href="#" class="text-muted">Eligibility Check</a></li>
+                </ul>
+            </div>
+
+            <div class="col-md-3">
+                <h6>Contact Info</h6>
+                <ul class="list-unstyled small">
+                    <li class="mb-2">
+                        <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                        <span class="text-muted">123 Blood Donor Street, Mumbai</span>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-phone text-danger me-2"></i>
+                        <span class="text-muted">+91 12345 67890</span>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-envelope text-danger me-2"></i>
+                        <span class="text-muted">support@blooddonor.com</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <hr class="bg-secondary">
+
+        <div class="row align-items-center">
+            <div class="col-md-6 text-center text-md-start">
+                <p class="small text-muted mb-0">
+                    &copy; {{ now().year }} Smart Blood Donor System. All rights reserved.
+                </p>
+            </div>
+            <div class="col-md-6 text-center text-md-end">
+                <p class="small text-muted mb-0">
+                    Made with <i class="fas fa-heart text-danger"></i> for saving lives
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<style>
+.footer a {
+    text-decoration: none;
+    transition: color 0.3s;
+}
+.footer a:hover {
+    color: #dc3545 !important;
+}
+.social-links a {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    text-align: center;
+    line-height: 32px;
+    transition: all 0.3s;
+}
+.social-links a:hover {
+    background: #dc3545;
+    transform: translateY(-3px);
+}
+</style>

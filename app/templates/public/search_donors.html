@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Find Donors - Smart Blood Donor{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-search me-2"></i>Find Blood Donors</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Donor search page is under construction. Please use the navigation menu to access donor features.
+                    </div>
+                    <div class="text-center">
+                        <a href="{{ url_for('donor.nearby_donors') }}" class="btn btn-danger me-2">
+                            <i class="fas fa-map-marked-alt me-2"></i>Go to Nearby Donors
+                        </a>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-danger">
+                            <i class="fas fa-home me-2"></i>Back to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+donor_id,donation_date,blood_type,age,gender,weight,hemoglobin,blood_pressure_systolic,blood_pressure_diastolic,donation_center,city,state,is_first_donation,is_emergency,units_donated,reaction,days_since_last_donation,season,month,day_of_week,hour
+1001,15-01-2023 10:30,O+,28,Male,72,14.2,118,76,City Blood Bank,Mumbai,Maharashtra,0,0,1,none,120,winter,1,6,10
+1002,16-01-2023 14:45,A+,35,Female,65,13.8,122,78,Red Cross Center,Delhi,Delhi,0,0,1,none,95,winter,1,0,14
+1003,18-01-2023 09:15,B+,42,Male,80,15.1,128,82,General Hospital,Bangalore,Karnataka,0,0,1,none,180,winter,1,2,9
+1004,20-01-2023 11:30,AB+,24,Female,58,12.9,110,72,Blood Bank,Chennai,Tamil Nadu,1,0,1,none,0,winter,1,4,11
+1005,22-01-2023 16:00,O-,31,Male,68,14.5,124,80,City Hospital,Hyderabad,Telangana,0,1,2,none,210,winter,1,6,16
+1006,05-02-2023 10:00,A-,29,Female,62,13.2,116,74,Red Cross,Delhi,Delhi,0,0,1,none,85,spring,2,0,10
+1007,08-02-2023 13:20,B-,45,Male,85,15.5,132,86,General Hospital,Mumbai,Maharashtra,0,0,1,none,200,spring,2,3,13
+1008,12-02-2023 15:45,AB-,27,Female,60,12.8,114,72,City Blood Bank,Chennai,Tamil Nadu,1,0,1,none,0,spring,2,0,15
+1009,18-02-2023 09:30,O+,33,Male,70,14,120,78,Blood Bank,Bangalore,Karnataka,0,0,1,none,150,spring,2,6,9
+1010,25-02-2023 11:15,A+,38,Female,63,13.5,118,76,City Hospital,Hyderabad,Telangana,0,0,1,none,110,spring,2,6,11
+1011,03-03-2023 14:00,O-,26,Male,66,14.8,126,82,Red Cross Center,Mumbai,Maharashtra,0,1,2,none,180,spring,3,4,14
+1012,08-03-2023 10:45,B+,41,Female,64,13.6,120,78,General Hospital,Delhi,Delhi,0,0,1,none,130,spring,3,2,10
+1013,15-03-2023 12:30,AB+,30,Male,73,14.2,122,80,City Blood Bank,Bangalore,Karnataka,0,0,1,none,95,spring,3,3,12
+1014,22-03-2023 16:30,A-,36,Female,61,13,114,72,Blood Bank,Chennai,Tamil Nadu,0,0,1,none,140,spring,3,3,16
+1015,28-03-2023 09:45,O+,44,Male,78,15.2,130,84,City Hospital,Hyderabad,Telangana,0,0,1,none,220,spring,3,1,9
+1016,05-04-2023 11:00,B-,32,Female,59,12.7,112,70,Red Cross,Delhi,Delhi,1,0,1,none,0,spring,4,2,11
+1017,12-04-2023 14:30,AB+,29,Male,69,14.3,124,80,General Hospital,Mumbai,Maharashtra,0,0,1,none,105,spring,4,3,14
+1018,18-04-2023 10:15,O-,37,Female,66,13.7,118,76,City Blood Bank,Chennai,Tamil Nadu,0,0,1,none,160,spring,4,3,10
+1019,25-04-2023 15:45,A+,34,Male,71,14.1,120,78,Blood Bank,Bangalore,Karnataka,0,1,2,none,190,spring,4,1,15
+1020,30-04-2023 09:30,B+,42,Female,65,13.4,116,74,City Hospital,Hyderabad,Telangana,0,0,1,none,125,spring,4,6,9
+1021,08-05-2023 13:15,O+,25,Male,64,14.6,122,80,Red Cross Center,Mumbai,Maharashtra,0,0,1,none,90,summer,5,1,13
+1022,15-05-2023 11:45,A-,39,Female,62,13.1,114,72,General Hospital,Delhi,Delhi,0,0,1,none,135,summer,5,1,11
+1023,22-05-2023 10:00,AB-,28,Male,67,14,118,76,City Blood Bank,Bangalore,Karnataka,0,0,1,none,115,summer,5,2,10
+1024,28-05-2023 16:15,B+,43,Female,64,13.3,116,74,Blood Bank,Chennai,Tamil Nadu,0,0,1,none,145,summer,5,0,16
+1025,05-06-2023 14:30,O-,35,Male,72,14.5,124,82,City Hospital,Hyderabad,Telangana,0,1,2,none,200,summer,6,2,14
+1026,12-06-2023 09:45,A+,31,Female,60,12.9,112,70,Red Cross,Delhi,Delhi,0,0,1,none,100,summer,6,1,9
+1027,18-06-2023 12:00,B-,38,Male,75,14.8,126,84,General Hospital,Mumbai,Maharashtra,0,0,1,none,155,summer,6,1,12
+1028,25-06-2023 15:30,AB+,27,Female,58,12.6,110,68,City Blood Bank,Chennai,Tamil Nadu,1,0,1,none,0,summer,6,6,15
+1029,03-07-2023 10:30,O+,40,Male,76,15,128,86,Blood Bank,Bangalore,Karnataka,0,0,1,none,165,summer,7,1,10
+1030,10-07-2023 13:45,A-,33,Female,63,13.2,116,74,City Hospital,Hyderabad,Telangana,0,0,1,none,120,summer,7,2,13
+1031,18-07-2023 11:15,O+,29,Male,68,14.2,120,78,Red Cross Center,Mumbai,Maharashtra,0,0,1,none,95,summer,7,3,11
+1032,25-07-2023 16:00,B+,44,Female,65,13.6,118,76,General Hospital,Delhi,Delhi,0,0,1,none,140,summer,7,3,16
+1033,05-08-2023 09:30,AB-,26,Male,66,13.9,122,80,City Blood Bank,Bangalore,Karnataka,0,0,1,none,110,summer,8,0,9
+1034,12-08-2023 14:15,O-,36,Female,62,13.1,114,72,Blood Bank,Chennai,Tamil Nadu,0,0,1,none,130,summer,8,5,14
+1035,20-08-2023 11:45,A+,41,Male,73,14.3,124,82,City Hospital,Hyderabad,Telangana,0,0,1,none,170,summer,8,1,11
+1036,28-08-2023 15:30,B-,30,Female,59,12.8,112,70,Red Cross,Delhi,Delhi,0,0,1,none,105,summer,8,2,15
+1037,05-09-2023 10:00,O+,34,Male,70,14.1,120,78,General Hospital,Mumbai,Maharashtra,0,0,1,none,115,fall,9,3,10
+1038,12-09-2023 13:30,AB+,39,Female,64,13.4,116,74,City Blood Bank,Chennai,Tamil Nadu,0,0,1,none,125,fall,9,3,13
+1039,20-09-2023 12:15,O-,28,Male,67,14,118,76,Blood Bank,Bangalore,Karnataka,0,0,1,none,100,fall,9,4,12
+1040,28-09-2023 16:45,A-,42,Female,61,13,114,72,City Hospital,Hyderabad,Telangana,0,0,1,none,135,fall,9,5,16
+1041,08-10-2023 09:30,B+,32,Male,69,14.4,122,80,Red Cross Center,Mumbai,Maharashtra,0,0,1,none,120,fall,10,6,9
+1042,15-10-2023 14:00,AB-,37,Female,63,13.3,116,74,General Hospital,Delhi,Delhi,0,0,1,none,145,fall,10,6,14
+1043,22-10-2023 11:30,O+,45,Male,79,15.3,130,86,City Blood Bank,Bangalore,Karnataka,0,0,1,none,185,fall,10,1,11
+1044,30-10-2023 15:15,A-,29,Female,60,12.9,112,70,Blood Bank,Chennai,Tamil Nadu,1,0,1,none,0,fall,10,2,15
+1045,05-11-2023 10:45,O-,33,Male,71,14.2,120,78,City Hospital,Hyderabad,Telangana,0,0,1,none,115,fall,11,6,10
+1046,12-11-2023 13:00,B+,38,Female,62,13.2,114,72,Red Cross,Delhi,Delhi,0,0,1,none,125,fall,11,6,13
+1047,20-11-2023 12:30,AB+,31,Male,68,14.1,118,76,General Hospital,Mumbai,Maharashtra,0,0,1,none,105,fall,11,2,12
+1048,28-11-2023 16:30,O+,40,Female,65,13.5,116,74,City Blood Bank,Chennai,Tamil Nadu,0,0,1,none,130,fall,11,1,16
+1049,05-12-2023 09:15,A-,35,Male,72,14.4,122,80,Blood Bank,Bangalore,Karnataka,0,0,1,none,140,winter,12,1,9
+1050,12-12-2023 14:45,B-,27,Female,59,12.7,110,68,City Hospital,Hyderabad,Telangana,1,0,1,none,0,winter,12,1,14
+1051,20-12-2023 11:00,O+,43,Male,77,15.1,128,84,Red Cross Center,Mumbai,Maharashtra,0,1,2,none,195,winter,12,2,11
+1052,25-12-2023 10:30,AB+,36,Female,64,13.4,116,74,General Hospital,Delhi,Delhi,0,1,2,none,165,winter,12,0,10
+1053,05-01-2024 15:00,O-,32,Male,69,14.3,124,82,City Blood Bank,Bangalore,Karnataka,0,0,1,none,110,winter,1,4,15
+1054,12-01-2024 13:30,A+,39,Female,63,13.2,114,72,Blood Bank,Chennai,Tamil Nadu,0,0,1,none,120,winter,1,4,13
+1055,18-01-2024 09:45,B+,34,Male,70,14.2,120,78,City Hospital,Hyderabad,Telangana,0,0,1,none,115,winter,1,3,9
+1056,25-01-2024 16:15,AB-,28,Female,61,13,112,70,Red Cross,Delhi,Delhi,0,0,1,none,105,winter,1,3,16
+1057,02-02-2024 11:30,O+,41,Male,74,14.6,126,82,General Hospital,Mumbai,Maharashtra,0,0,1,none,125,winter,2,4,11
+1058,10-02-2024 14:00,A-,37,Female,62,13.1,114,72,City Blood Bank,Chennai,Tamil Nadu,0,0,1,none,130,winter,2,5,14
+1059,18-02-2024 10:15,O-,30,Male,67,14,118,76,Blood Bank,Bangalore,Karnataka,0,0,1,none,100,winter,2,6,10
+1060,25-02-2024 15:30,B+,42,Female,65,13.5,116,74,City Hospital,Hyderabad,Telangana,0,0,1,none,135,winter,2,6,15
+1061,03-03-2024 12:45,AB+,33,Male,69,14.1,120,78,Red Cross Center,Mumbai,Maharashtra,0,0,1,none,115,spring,3,6,12
+1062,10-03-2024 09:30,O-,38,Female,64,13.3,114,72,General Hospital,Delhi,Delhi,0,0,1,none,120,spring,3,6,9
+1063,18-03-2024 13:15,A+,29,Male,68,14.2,122,80,City Blood Bank,Bangalore,Karnataka,0,0,1,none,105,spring,3,0,13
+1064,25-03-2024 16:00,B-,35,Female,60,12.9,112,70,Blood Bank,Chennai,Tamil Nadu,0,0,1,none,125,spring,3,0,16
+1065,02-04-2024 10:30,O+,44,Male,78,15.2,130,86,City Hospital,Hyderabad,Telangana,0,0,1,none,145,spring,4,1,10
+1066,08-04-2024 14:45,AB+,31,Female,62,13.1,114,72,Red Cross,Delhi,Delhi,0,0,1,none,110,spring,4,0,14
+1067,15-04-2024 11:00,O-,36,Male,71,14.3,124,82,General Hospital,Mumbai,Maharashtra,0,0,1,none,130,spring,4,0,11
+1068,22-04-2024 15:30,A+,40,Female,63,13.2,116,74,City Blood Bank,Chennai,Tamil Nadu,0,0,1,none,135,spring,4,0,15
+1069,28-04-2024 09:45,B+,32,Male,68,14,118,76,Blood Bank,Bangalore,Karnataka,0,0,1,none,115,spring,4,6,9
+1070,05-05-2024 12:30,O-,27,Female,59,12.8,112,70,City Hospital,Hyderabad,Telangana,1,0,1,none,0,summer,5,6,12

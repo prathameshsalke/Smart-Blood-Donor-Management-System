@@ -1,0 +1,90 @@
+{% macro donor_card(donor, show_actions=True) %}
+<div class="card donor-card h-100">
+    <div class="card-body">
+        <div class="d-flex align-items-center mb-3">
+            <div class="donor-avatar me-3">
+                <img src="{{ donor.avatar or url_for('static', filename='images/default-avatar.png') }}" 
+                     class="rounded-circle" width="60" height="60" alt="{{ donor.name }}">
+            </div>
+            <div>
+                <h5 class="card-title mb-1">{{ donor.name }}</h5>
+                <p class="text-muted small mb-0">{{ donor.city }}, {{ donor.state }}</p>
+            </div>
+        </div>
+
+        <div class="donor-info mb-3">
+            <div class="row">
+                <div class="col-6">
+                    <span class="badge bg-danger blood-badge">{{ donor.blood_type }}</span>
+                </div>
+                <div class="col-6 text-end">
+                    {% if donor.is_available %}
+                        <span class="badge bg-success">Available</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Unavailable</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="donor-stats mb-3">
+            <div class="row text-center">
+                <div class="col-4">
+                    <h6 class="mb-0">{{ donor.age or 'N/A' }}</h6>
+                    <small class="text-muted">Age</small>
+                </div>
+                <div class="col-4">
+                    <h6 class="mb-0">{{ donor.total_donations }}</h6>
+                    <small class="text-muted">Donations</small>
+                </div>
+                <div class="col-4">
+                    <h6 class="mb-0">{{ donor.distance_km|round(1) if donor.distance_km else 'N/A' }}</h6>
+                    <small class="text-muted">km away</small>
+                </div>
+            </div>
+        </div>
+
+        {% if donor.last_donation_date %}
+        <div class="mb-3">
+            <small class="text-muted">
+                <i class="fas fa-calendar-alt me-1"></i>
+                Last donation: {{ donor.last_donation_date.strftime('%d %b, %Y') }}
+            </small>
+        </div>
+        {% endif %}
+
+        {% if show_actions %}
+        <div class="donor-actions">
+            <div class="d-grid gap-2">
+                <button class="btn btn-outline-danger btn-sm" onclick="contactDonor({{ donor.id }})">
+                    <i class="fas fa-phone-alt me-1"></i>Contact
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="viewDonorProfile({{ donor.id }})">
+                    <i class="fas fa-user me-1"></i>View Profile
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.donor-card {
+    transition: all 0.3s;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+.donor-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(220,53,69,0.1);
+    border-color: #dc3545;
+}
+.donor-avatar img {
+    object-fit: cover;
+    border: 2px solid #dc3545;
+}
+.blood-badge {
+    font-size: 1rem;
+    padding: 0.3rem 1rem;
+}
+</style>
+{% endmacro %}
